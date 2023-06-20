@@ -80,9 +80,9 @@ void httpMethods::loadParamsGET(std::string request)
                 }
                 params_get.cookies.insert(std::make_pair(key, value2));
             }
-            for (const auto& pair : params_get.cookies) {
-                std::cout << pair.first << ": " << pair.second << std::endl;
-            }
+            // for (const auto& pair : params_get.cookies) {
+            //     std::cout << pair.first << ": " << pair.second << std::endl;
+            // }
         }
         else if (param == "Accept-Language:")
         {

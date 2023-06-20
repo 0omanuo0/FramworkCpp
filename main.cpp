@@ -22,7 +22,12 @@ std::string home(Args &args)
     else
     {
         // Ruta sin variables
-        return "<h1>Bienvenido al dashboard</h1>";
+        std::string sessionID = args.method.params_get.cookies["SessionID"];
+        Session session = server.findMatchSession(sessionID);
+        if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
+            return "Bienvenido al dashboard: " +
+                   session.sessionUser.id;
+        return Redirect(args.socket, "/login");;
     }
 }
 
@@ -33,14 +38,14 @@ std::string login(Args &args)
         std::map<std::string, std::string> content = args.method.params_post.content;
         std::string sessionID = args.method.params_get.cookies["SessionID"];
         Session session = server.findMatchSession(sessionID);
-        for (const auto &session : server.sessions)
-        {
-            for (const auto &pair : session.sessionUser.values)
-            {
-                std::cout << pair.first << ": " << pair.second << std::endl;
-            }
-        }
-        if (session.obtainValue("logged") == "true")
+        // for (const auto &session : server.sessions)
+        // {
+        //     for (const auto &pair : session.sessionUser.values)
+        //     {
+        //         std::cout << pair.first << ": " << pair.second << std::endl;
+        //     }
+        // }
+        if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
             return "logged in";
         return "<form action=\"/login\" method=\"post\">"
                "<label for=\"name\">Name:</label>"
@@ -58,10 +63,9 @@ std::string login(Args &args)
 
         if (content["fpass"] == "123" && content["fname"] == "manu")
         {
-            Session s1 = Session(idGenerator::generateIDstr());
-            s1.addValue("logged", "true");
+            Session s1 = Session(idGenerator::generateIDstr(), "logged", "true");
             server.sessions.push_back(s1);
-            return "eyeyey: " + output + args.method.query;
+            return Redirect(args.socket, std::string("/dashboard"));
         }
     }
     return "error";

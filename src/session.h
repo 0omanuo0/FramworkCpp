@@ -10,6 +10,7 @@ public:
         std::map<std::string, std::string> values;
     };
     session sessionUser;
+    bool create;
     bool isEmpty(){
         return sessionUser.id.empty() ? true : false;
     }
@@ -24,6 +25,11 @@ public:
     }
     
     Session(std::string id_f){sessionUser.id = id_f;}
+    Session(std::string id_f, std::string key, std::string value){
+        sessionUser.id = id_f;
+        sessionUser.values.insert(make_pair(key, value));
+        create = true;
+    }
 };
 
 

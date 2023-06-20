@@ -78,9 +78,9 @@ bool matchPathWithRoute(const std::string &path, const std::string &routePath, s
     return !std::getline(routePathStream, routeSegment, '/');
 }
 
-
-int waitSocket(int socket, char buffer[], int buffer_len){
-     // manejo del socket
+int waitSocket(int socket, char buffer[], int buffer_len)
+{
+    // manejo del socket
     shutdown(socket, SHUT_WR);
 
     while (recv(socket, buffer, buffer_len, 0) > 0)
@@ -89,6 +89,18 @@ int waitSocket(int socket, char buffer[], int buffer_len){
     close(socket);
 
     return 0;
+}
+
+std::string findCookie(HttpServer &server){
+    for (auto &session : server.sessions)
+    {
+        if(session.create){
+            session.create = false;
+            return session.sessionUser.id;
+        }
+    }
+    return std::string();
+    
 }
 
 int HttpServer::handleRequest(int socket)
@@ -127,6 +139,8 @@ int HttpServer::handleRequest(int socket)
                 Args arg = Args(routeVars, http_method, session);
                 arg.socket = socket;
                 response = route.handler(arg);
+                if (response == REDIRECT)
+                    return waitSocket(socket, buffer, sizeof(buffer));
                 break;
             }
         }
@@ -136,18 +150,18 @@ int HttpServer::handleRequest(int socket)
             Args arg = Args(routeVars, http_method, session);
             arg.socket = socket;
             response = route.handler(arg);
-            if(response == REDIRECT)
+            if (response == REDIRECT)
                 return waitSocket(socket, buffer, sizeof(buffer));
             break;
         }
     }
+
 
     // encontrar ruta de archivos (si existiera)
     std::string path_to_file;
 
     if (response.empty())
     {
-
         for (const auto &route_file : routes_file)
         {
             std::string::size_type pos = http_method.route.find(route_file.path);
@@ -173,7 +187,11 @@ int HttpServer::handleRequest(int socket)
     else
     {
         response_server.length = response.length();
-        response_with_header += response_server.defaultOK();
+        std::string cookie[] = {"SessionID", findCookie(*this)};
+        if(cookie[1].empty())
+            response_with_header += response_server.defaultOK();
+        else
+            response_with_header += response_server.defaultOK_cookie(cookie);
         response_with_header += response;
         sendResponse(socket, response_with_header);
     }
@@ -181,4 +199,3 @@ int HttpServer::handleRequest(int socket)
 
     return 0;
 }
-

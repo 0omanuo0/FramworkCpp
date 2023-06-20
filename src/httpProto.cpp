@@ -8,7 +8,7 @@ void httpProtoResponse::appendParam(std::string name, std::string value)
 void httpProtoResponse::appendCookie(std::string cookie[], const std::string path, int max_age, bool http_only)
 {
     std::string cookie_s = cookie[0] + "=" + cookie[1] + "; Path=" + path + "; max-Age=" + std::to_string(max_age) + (http_only ? "; HttpOnly" : "");
-    headers.insert(make_pair("Set-Cookie:", cookie_s));
+    headers.insert(make_pair("Set-Cookie", cookie_s));
 }
 
 std::string httpProtoResponse::defaultOK_cookie(std::string cookie[], std::string path, int max_age, bool http_only)
@@ -57,5 +57,5 @@ std::string httpProtoResponse::createResponseString(std::string type)
     for (const auto &header : headers)
         response += header.first + ": " + header.second + "\r\n";
 
-    return response + "\r\n\n";
+    return response + "\r\n";
 }

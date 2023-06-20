@@ -1,0 +1,35 @@
+hola que tal
+
+POST /login HTTP/1.1\r\n
+Host: localhost:9443\r\n
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0\r\n
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n
+Accept-Language: es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3\r\n
+Accept-Encoding: gzip, deflate, br\r\n
+Content-Type: application/x-www-form-urlencoded\r\n
+Content-Length: 13\r\n
+Origin: http://localhost:9443\r\nDNT: 1\r\n
+Connection: keep-alive\r\n
+Referer: http://localhost:9443/login\r\n
+Upgrade-Insecure-Requests: 1\r\n
+Sec-Fetch-Dest: document\r\n
+Sec-Fetch-Mode: navigate\r\n
+Sec-Fetch-Site: same-origin\r\n
+Sec-Fetch-User: ?1\r\n\r\n
+fname=&lname="
+
+
+0x5555555bfb00 
+GET /login HTTP/1.1\r\n
+Host: localhost:9443\r\n
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/114.0\r\n
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n
+Accept-Language: es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3\r\n
+Accept-Encoding: gzip, deflate, br\r\n
+DNT: 1\r\n
+Connection: keep-alive\r\n
+Upgrade-Insecure-Requests: 1\r\n
+Sec-Fetch-Dest: document\r\n
+Sec-Fetch-Mode: navigate\r\n
+Sec-Fetch-Site: none\r\n
+Sec-Fetch-User: ?1\r\n\r\n"

@@ -14,6 +14,8 @@ std::string home(Args &args)
     {
         std::string admin = args.vars[0];
         std::string id = args.vars[1];
+        if (admin == "1234")
+            return Redirect(args.socket, "/dashboard");
 
         return "<h1>Hola, admin " + admin + ", tu ID es " + id + "</h1>";
     }
@@ -31,11 +33,13 @@ std::string login(Args &args)
         std::map<std::string, std::string> content = args.method.params_post.content;
         std::string sessionID = args.method.params_get.cookies["SessionID"];
         Session session = server.findMatchSession(sessionID);
-        for (const auto& session : server.sessions) {
-                for (const auto& pair : session.sessionUser.values) {
+        for (const auto &session : server.sessions)
+        {
+            for (const auto &pair : session.sessionUser.values)
+            {
                 std::cout << pair.first << ": " << pair.second << std::endl;
             }
-            }
+        }
         if (session.obtainValue("logged") == "true")
             return "logged in";
         return "<form action=\"/login\" method=\"post\">"
@@ -51,7 +55,6 @@ std::string login(Args &args)
         std::string output;
 
         std::map<std::string, std::string> content = args.method.params_post.content;
-        
 
         if (content["fpass"] == "123" && content["fname"] == "manu")
         {
@@ -71,10 +74,10 @@ int main(int argc, char **argv)
 
     server.addRoute("/login", login, {GET, POST});
 
-    // server.addRoute("/dashboard/<admin>/<id>",
-    //                 home,{GET},
-    //                 std::vector<std::string>(),
-    //                 std::string());
+    server.addRoute("/dashboard/<admin>/<id>",
+                    home, {GET},
+                    std::vector<std::string>(),
+                    std::string());
 
     server.addFilesHandler("/files/", "./files/");
     server.setup();

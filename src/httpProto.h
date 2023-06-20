@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_PROTO_H
+#define HTTP_PROTO_H
 
 #include <string>
 #include <map>
@@ -26,11 +27,7 @@ public:
         : server(server_f), headers(headers_f){};
 
     void appendParam(std::string name, std::string value);
-    void appendCookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true)
-    {
-        std::string cookie_s = cookie[0] + "=" + cookie[1] + "; Path=" + path + "; max-Age=" + std::to_string(max_age) + (http_only ? "; HttpOnly" : "");
-        headers.insert(make_pair("Set-Cookie:", cookie_s));
-    }
+    void appendCookie(std::string cookie[2], const std::string path = "/", int max_age = 31536000, bool http_only = true);
 
     std::string createResponseString(std::string type);
     std::string createResponseString(std::string type, std::pair<std::string, std::string> content);
@@ -38,18 +35,13 @@ public:
     std::string defaultRedirect(std::string url);
     std::string defaultOK();
     std::string defaultNotFound();
-    std::string defaultOK_cookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true)
-    {
-        appendCookie(cookie, path, max_age, http_only);
-        return defaultOK();
-    }
+    std::string defaultOK_cookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true);
 };
-
-#pragma region funciones_utiles
+/*
 void httpProtoResponse::appendParam(std::string name, std::string value)
 {
     headers.insert(make_pair(name, value));
-}
+}*/
 /*
 void httpProtoResponse::appendCookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true)
 {
@@ -63,45 +55,5 @@ std::string httpProtoResponse::defaultOK_cookie(std::string cookie[2], std::stri
     return defaultOK();
 }
 */
-std::string httpProtoResponse::defaultRedirect(std::string url)
-{
-    headers.insert(std::make_pair("Location", url));
-    return createResponseString(REDIRECT303);
-}
 
-std::string httpProtoResponse::defaultOK()
-{
-    headers.insert(std::make_pair("Content-Type", "text/html"));
-    return createResponseString(OK200);
-}
-std::string httpProtoResponse::defaultNotFound()
-{
-    headers.insert(std::make_pair("Content-Type", "text/html"));
-    return createResponseString(NOTFOUND404);
-}
-
-std::string httpProtoResponse::createResponseString(std::string type, std::pair<std::string, std::string> content)
-{
-    headers.insert(content);
-    return createResponseString(type);
-}
-
-#pragma endregion
-
-// funcion principal que crea la respouesta
-std::string httpProtoResponse::createResponseString(std::string type)
-{
-    std::string response = type + "\r\n";
-    if (length > 0)
-        headers.insert(std::make_pair("Content-Length", std::to_string(length)));
-
-    if (headers["Content-Type"].empty())
-        headers.insert(std::make_pair("Content-Type", "text/html"));
-
-    headers.insert(std::make_pair("Server", server));
-
-    for (const auto &header : headers)
-        response += header.first + ": " + header.second + "\r\n";
-
-    return response + "\r\n\n";
-}
+#endif

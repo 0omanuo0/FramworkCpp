@@ -14,6 +14,8 @@
 
 const std::string SERVER = "Soria/0.0.1b (Unix)";
 
+const std::string REDIRECT = "VOID*REDIRECT";
+
 class Args
 {
 private:
@@ -23,6 +25,7 @@ public:
     const std::string query;
     httpMethods method;
     Session session;
+    int socket;
     Args(std::vector<std::string> vars_f, httpMethods method_f, Session session_f)
         : vars(vars_f), method(method_f), session(session_f) {}
 };
@@ -31,8 +34,6 @@ class HttpServer
 {
 private:
     int handleRequest(int socket);
-    int sendResponse(int socket, std::string response);
-    int sendResponse(int socket, std::vector<std::string> response);
     // Definición de la estructura Route
     struct Route
     {
@@ -68,6 +69,9 @@ public:
     void startListener(int port);
     int setup();
 
+    static int sendResponse(int socket, std::string response);
+    int sendResponse(int socket, std::vector<std::string> response);
+
     void addRoute(const std::string &path,
                   std::function<std::string(Args &)> handler,
                   std::vector<std::string> methods);
@@ -83,5 +87,7 @@ public:
 
     void addFilesHandler(const std::string &path, const std::string &folder_path);
 };
+
+std::string Redirect(int socket, std::string url);
 
 #endif // SERVER_H

@@ -78,6 +78,19 @@ bool matchPathWithRoute(const std::string &path, const std::string &routePath, s
     return !std::getline(routePathStream, routeSegment, '/');
 }
 
+
+int waitSocket(int socket, char buffer[], int buffer_len){
+     // manejo del socket
+    shutdown(socket, SHUT_WR);
+
+    while (recv(socket, buffer, buffer_len, 0) > 0)
+        continue; // esperar a que acabe el envio
+
+    close(socket);
+
+    return 0;
+}
+
 int HttpServer::handleRequest(int socket)
 {
     memset(buffer, 0, sizeof(buffer));
@@ -112,6 +125,7 @@ int HttpServer::handleRequest(int socket)
             if (matchPathWithRoute(http_method.route, route.path, routeVars))
             {
                 Args arg = Args(routeVars, http_method, session);
+                arg.socket = socket;
                 response = route.handler(arg);
                 break;
             }
@@ -120,7 +134,10 @@ int HttpServer::handleRequest(int socket)
         {
             std::vector<std::string> routeVars;
             Args arg = Args(routeVars, http_method, session);
+            arg.socket = socket;
             response = route.handler(arg);
+            if(response == REDIRECT)
+                return waitSocket(socket, buffer, sizeof(buffer));
             break;
         }
     }
@@ -160,14 +177,8 @@ int HttpServer::handleRequest(int socket)
         response_with_header += response;
         sendResponse(socket, response_with_header);
     }
-
-    // manejo del socket
-    shutdown(socket, SHUT_WR);
-
-    while (recv(socket, buffer, sizeof(buffer), 0) > 0)
-        continue; // esperar a que acabe el envio
-
-    close(socket);
+    waitSocket(socket, buffer, sizeof(buffer));
 
     return 0;
 }
+

@@ -162,7 +162,7 @@ int HttpServer::handleRequest(int socket)
 
     if (response.empty())
     {
-        for (const auto &route_file : routes_file)
+        for (const auto &route_file : routes_folder)
         {
             std::string::size_type pos = http_method.route.find(route_file.path);
             if (pos != std::string::npos)

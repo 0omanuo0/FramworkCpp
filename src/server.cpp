@@ -75,7 +75,8 @@ void HttpServer::createSession()
 #pragma region addRoutes
 void HttpServer::addRoute(const std::string &path,
                           const std::function<std::string(Args &)> handler,
-                          std::vector<std::string> methods){
+                          std::vector<std::string> methods)
+{
     routes.push_back({path, methods, [handler](Args &args)
                       {
                           return handler(args); // Call the original handler with the query and method
@@ -106,7 +107,13 @@ void HttpServer::addRoute(const std::string &path,
 
 void HttpServer::addFilesHandler(const std::string &path, const std::string &folder_path)
 {
-    routes_file.push_back({path, folder_path});
+    routes_folder.push_back({path, folder_path});
+}
+
+void HttpServer::addrouteFile(const std::string &path, std::string type)
+{
+    type = content_type.find(type)->second;
+    routes_files.push_back({path, type});
 }
 
 #pragma endregion

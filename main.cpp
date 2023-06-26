@@ -17,7 +17,7 @@ std::string home(Args &args)
         if (admin == "1234")
             return Redirect(args.socket, "/dashboard");
 
-        return "<h1>Hola, admin " + admin + ", tu ID es " + id + "</h1>";
+        return server.render("templates/index.html", {{"id", id}, {"nombre", admin}});
     }
     else
     {

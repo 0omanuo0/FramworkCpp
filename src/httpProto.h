@@ -6,8 +6,8 @@
 #include <vector>
 #include "server.h"
 
-const std::string COOKIE = "get";
-const std::string USERAGENT = "post";
+const std::string COOKIE = "GET";
+const std::string USERAGENT = "POST";
 
 const std::string OK200 = "HTTP/1.1 200 OK";
 const std::string NOTFOUND404 = "HTTP/1.1 404 Not Found";

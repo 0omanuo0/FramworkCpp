@@ -16,6 +16,13 @@ const std::string SERVER = "Soria/0.0.1b (Unix)";
 
 const std::string REDIRECT = "VOID*REDIRECT";
 
+const std::map<std::string, std::string> content_type = {
+    {"js", "application/javascript"},
+    {"css", "text/css"},
+    {"html", "text/html"},
+    {"txt", "text/plain"}
+    };
+
 class Args
 {
 private:
@@ -39,19 +46,26 @@ private:
     {
         std::string path;
         std::vector<std::string> methods;
-        std::function<std::string(Args&)> handler;
+        std::function<std::string(Args &)> handler;
     };
 
-    struct RouteFiles
+    struct RouteFolder
     {
         std::string path;
         std::string folder_path;
     };
+    struct RouteFile
+    {
+        std::string path;
+        std::string type;
+    };
 
     std::vector<Route> routes;
-    std::vector<RouteFiles> routes_file;
-    
+    std::vector<RouteFile> routes_files;
+    std::vector<RouteFolder> routes_folder;
+
     void createSession();
+    std::string __render_line(std::string line, std::map<std::string, std::string> data = std::map<std::string, std::string>());
 
 public:
     int port = 8080;
@@ -85,7 +99,11 @@ public:
                   std::vector<std::string> vars,
                   std::string query);
 
+    void addrouteFile(const std::string &path, std::string type);
     void addFilesHandler(const std::string &path, const std::string &folder_path);
+
+    void urlfor(const std::string &endpoint);
+    std::string render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>());
 };
 
 std::string Redirect(int socket, std::string url);

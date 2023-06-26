@@ -1,11 +1,14 @@
 #include "server.h"
 #include "httpProto.h"
 
-std::string Redirect(int socket, std::string url){
+std::string Redirect(int socket, std::string url, std::vector<std::string> cookie){///////////areglas cookie
     httpProtoResponse response;
-    
-    HttpServer::sendResponse(socket, response.defaultRedirect(url));
 
+    if(cookie.empty())
+        HttpServer::sendResponse(socket, response.defaultRedirect(url));
+    else
+        HttpServer::sendResponse(socket, response.defaultRedirect_cookie(url, cookie.data()));
+    
     return REDIRECT;
 }
 

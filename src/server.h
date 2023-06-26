@@ -106,6 +106,7 @@ public:
     std::string render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>());
 };
 
-std::string Redirect(int socket, std::string url);
+std::string Redirect(int socket, std::string url, std::vector<std::string> cookie = {});
+std::string findCookie(HttpServer &server);
 
 #endif // SERVER_H

@@ -25,8 +25,7 @@ std::string home(Args &args)
         std::string sessionID = args.method.params_get.cookies["SessionID"];
         Session session = server.findMatchSession(sessionID);
         if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
-            return "Bienvenido al dashboard: " +
-                   session.sessionUser.id;
+            return "Bienvenido al dashboard: " + session.sessionUser.id;
         return Redirect(args.socket, "/login");
         ;
     }
@@ -53,7 +52,7 @@ std::string login(Args &args)
         {
             Session s1 = Session(idGenerator::generateIDstr(), "logged", "true");
             server.sessions.push_back(s1);
-            return Redirect(args.socket, std::string("/dashboard"));
+            return Redirect(args.socket, std::string("/dashboard"), {"SessionID", findCookie(server)});
         }
     }
     return "error";

@@ -17,6 +17,11 @@ std::string httpProtoResponse::defaultOK_cookie(std::string cookie[], std::strin
     return defaultOK();
 }
 
+std::string httpProtoResponse::defaultRedirect_cookie(std::string url, std::string cookie[], std::string path, int max_age, bool http_only)
+{
+    appendCookie(cookie, path, max_age, http_only);
+    return defaultRedirect(url);
+}
 
 std::string httpProtoResponse::defaultRedirect(std::string url)
 {

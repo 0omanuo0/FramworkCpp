@@ -33,6 +33,7 @@ public:
     std::string createResponseString(std::string type, std::pair<std::string, std::string> content);
 
     std::string defaultRedirect(std::string url);
+    std::string defaultRedirect_cookie(std::string url, std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true);
     std::string defaultOK();
     std::string defaultNotFound();
     std::string defaultOK_cookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true);

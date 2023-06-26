@@ -15,6 +15,9 @@ int httpMethods::loadParams(std::string request)
         route = route.substr(0, pos);
         if (pos+1 >= route.length())
             query = route.substr(pos+1);
+        if (!route.empty() && route.back() == '/')// Eliminar el último carácter
+            route.pop_back();
+    
     }
 
     if (type.empty())

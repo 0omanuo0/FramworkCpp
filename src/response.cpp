@@ -16,6 +16,9 @@ int HttpServer::sendResponse(int socket, std::string response){
 }
 
 int HttpServer::sendResponse(int socket, std::vector<std::string> response){
+    if(response.empty())
+        return -1;
+
     // Enviar el encabezado y el contenido del archivo al cliente
     if (send(socket, response[0].c_str(), response[0].size(), 0) < 0)
     {

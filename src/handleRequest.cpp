@@ -3,7 +3,7 @@
 #include "url_encoding.h"
 #include "httpProto.h"
 
-std::vector<std::string> sendFile(std::string path_to_file)
+std::vector<std::string> sendFile(std::string path_to_file, std::string type = "application/zip")
 {
     std::vector<std::string> data_to_send = std::vector<std::string>();
     httpProtoResponse response_serv = httpProtoResponse();
@@ -31,7 +31,7 @@ std::vector<std::string> sendFile(std::string path_to_file)
 
     // Construir la respuesta HTTP con el encabezado adecuado
 
-    response_serv.appendParam("Content-Type", "application/zip");
+    response_serv.appendParam("Content-Type", type);
     response_serv.appendParam("Content-Disposition", "attachment; filename=\"" + path_to_file.substr(path_to_file.find_last_of("/") + 1) + "\"");
     response_serv.length = fileSize;
 
@@ -156,6 +156,7 @@ int HttpServer::handleRequest(int socket)
         }
     }
 
+    
 
     // encontrar ruta de archivos (si existiera)
     std::string path_to_file;
@@ -176,14 +177,42 @@ int HttpServer::handleRequest(int socket)
         }
     }
 
+
+
+    for (const auto& pair : routes_files) 
+        std::cout << pair.path << std::endl;
+
+    // encontrar ruta de archivos (si existiera)
+    std::string file[2];
+
+    if (response.empty())
+    {
+        for (const auto &route_file : routes_files)
+        {
+            std::string::size_type pos = http_method.route.find(route_file.path);
+            if (pos != std::string::npos)
+            {
+                // Coincidencia encontrada, reemplazar la ruta URL con la ruta local
+                std::string localPath = http_method.route;
+                localPath.replace(pos, route_file.path.length(), route_file.path);
+                file[0] = localPath.substr(1);
+                file[1] = route_file.type;
+                break;
+            }
+        }
+    }
+
     // respuestas http
     std::string response_with_header;
     httpProtoResponse response_server = httpProtoResponse();
 
-    if (response.empty() && path_to_file.empty())
+    if (response.empty() && path_to_file.empty()&&file[0].empty())
         sendResponse(socket, response_server.defaultNotFound() + "<h1>NOT FOUND</h1>");
     else if (!path_to_file.empty())
         sendResponse(socket, sendFile(path_to_file));
+    else if(!file[0].empty()){
+        sendResponse(socket, sendFile(file[0], file[1]));
+    }
     else
     {
         response_server.length = response.length();

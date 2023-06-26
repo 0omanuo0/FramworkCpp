@@ -12,7 +12,7 @@ def post_request(url, data):
 			time.sleep(0.1)  # Esperar 1 segundo antes de intentar nuevamente
 
 n = 300
-url = "http://localhost:9443/dashboard"
+url = "http://ord-manu.local:9443/login"
 data = {'fname': 'manu', 'fid': '123'}
 
 # Variables para el cálculo de peticiones por segundo

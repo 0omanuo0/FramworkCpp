@@ -1,0 +1,27 @@
+h1 {
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgb(41, 41, 41);
+    font-size: 32px;
+}
+button{
+    width: 90px;
+    height: 60px;
+    border-radius: 0.5rem;
+    border: 0.2em solid black;
+    background-color: #ffffff;
+}
+
+.main {
+    border: 0.05em solid black;
+    border-radius: 1rem;
+    display: flex;
+    justify-content: center;
+    width: 70%;
+    margin: 0 auto;
+}
+.button{
+    padding: 4rem;
+    margin: 0 auto;
+    width: fit-content;
+}

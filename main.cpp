@@ -27,7 +27,8 @@ std::string home(Args &args)
         if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
             return "Bienvenido al dashboard: " +
                    session.sessionUser.id;
-        return Redirect(args.socket, "/login");;
+        return Redirect(args.socket, "/login");
+        ;
     }
 }
 
@@ -38,22 +39,9 @@ std::string login(Args &args)
         std::map<std::string, std::string> content = args.method.params_post.content;
         std::string sessionID = args.method.params_get.cookies["SessionID"];
         Session session = server.findMatchSession(sessionID);
-        // for (const auto &session : server.sessions)
-        // {
-        //     for (const auto &pair : session.sessionUser.values)
-        //     {
-        //         std::cout << pair.first << ": " << pair.second << std::endl;
-        //     }
-        // }
         if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
             return "logged in";
-        return "<form action=\"/login\" method=\"post\">"
-               "<label for=\"name\">Name:</label>"
-               "<input type=\"text\" id=\"fname\" name=\"fname\"><br><br>"
-               "<label for=\"pass\">Pass:</label>"
-               "<input type=\"password\" id=\"fpass\" name=\"fpass\"><br><br>"
-               "<input type=\"submit\" value=\"Submit\">"
-               "</form>";
+        return server.render("templates/login.html");
     }
     else if (args.method.type == POST)
     {

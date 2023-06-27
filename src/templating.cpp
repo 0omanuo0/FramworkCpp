@@ -1,6 +1,22 @@
 #include <fstream>
 #include "server.h"
 #include "idGenerator.h"
+#include <filesystem>
+
+namespace fs = std::filesystem;
+void ListFilesAndFolders(const fs::path& directory, int level = 0) {
+    for (const auto& entry : fs::directory_iterator(directory)) {
+        const auto filename = entry.path().filename().string();
+        const auto indentation = std::string(level * 4, ' ');
+
+        if (fs::is_directory(entry.status())) {
+            std::cout << indentation << "[Folder] " << filename << std::endl;
+            ListFilesAndFolders(entry.path(), level + 1);
+        } else if (fs::is_regular_file(entry.status())) {
+            std::cout << indentation << "[File] " << filename << std::endl;
+        }
+    }
+}
 
 std::string HttpServer::__render_line(std::string line, std::map<std::string, std::string> data)
 {
@@ -55,6 +71,12 @@ std::string HttpServer::__render_line(std::string line, std::map<std::string, st
 // de momento en el redner solo va urlfor
 std::string HttpServer::render(const std::string &route, std::map<std::string, std::string> data)
 {
+    if(!std::filesystem::exists(route)){
+        std::cout << "file does not exist" << std::endl;
+        ListFilesAndFolders(".");
+        return "";
+    }
+
     std::ifstream file(route); // Reemplaza "archivo.html" con la ruta y el nombre de tu archivo HTML
     std::string rendered;
     if (file.is_open())

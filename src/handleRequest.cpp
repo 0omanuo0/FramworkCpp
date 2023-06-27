@@ -96,12 +96,14 @@ std::string findCookie(HttpServer &server){
     {
         if(session.create){
             session.create = false;
-            return session.sessionUser.id;
+            return session.id;
         }
     }
     return std::string();
     
 }
+
+
 
 int HttpServer::handleRequest(int socket)
 {
@@ -121,7 +123,7 @@ int HttpServer::handleRequest(int socket)
 
     std::cout << http_method.route << std::endl;
 
-    Session session = findMatchSession(http_method.params_get.cookies["SessionID"]);
+    Session session = findMatchSession(http_method.params.cookies["SessionID"]);
     // for (const auto& pair : http_method.params_get.cookies) {
     // std::cout << pair.first << ": " << pair.second << std::endl;
     // }
@@ -179,8 +181,8 @@ int HttpServer::handleRequest(int socket)
 
 
 
-    for (const auto& pair : routes_files) 
-        std::cout << pair.path << std::endl;
+    // for (const auto& pair : routes_files) 
+    //     std::cout << pair.path << std::endl;
 
     // encontrar ruta de archivos (si existiera)
     std::string file[2];

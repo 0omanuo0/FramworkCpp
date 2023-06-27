@@ -30,11 +30,11 @@ private:
 public:
     const std::vector<std::string> vars;
     const std::string query;
-    httpMethods method;
+    httpMethods request;
     Session session;
     int socket;
     Args(std::vector<std::string> vars_f, httpMethods method_f, Session session_f)
-        : vars(vars_f), method(method_f), session(session_f) {}
+        : vars(vars_f), request(method_f), session(session_f) {}
 };
 
 class HttpServer

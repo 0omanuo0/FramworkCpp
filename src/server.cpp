@@ -63,7 +63,7 @@ void HttpServer::startListener(int port)
 Session HttpServer::findMatchSession(std::string id)
 {
     for (auto &i : sessions)
-        if (i.sessionUser.id == id)
+        if (i.id == id)
             return i;
     return Session("");
 }

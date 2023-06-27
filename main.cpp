@@ -22,10 +22,8 @@ std::string home(Args &args)
     else
     {
         // Ruta sin variables
-        std::string sessionID = args.method.params_get.cookies["SessionID"];
-        Session session = server.findMatchSession(sessionID);
-        if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
-            return "Bienvenido al dashboard: " + session.sessionUser.id;
+        if (args.session["logged"] == "true" && args.session.id != "")
+            return "Bienvenido al dashboard: " + args.session.id;
         return Redirect(args.socket, "/login");
         ;
     }
@@ -33,22 +31,15 @@ std::string home(Args &args)
 
 std::string login(Args &args)
 {
-    if (args.method.type == GET)
+    if (args.request.method == GET)
     {
-        std::map<std::string, std::string> content = args.method.params_post.content;
-        std::string sessionID = args.method.params_get.cookies["SessionID"];
-        Session session = server.findMatchSession(sessionID);
-        if (session.obtainValue("logged") == "true" && session.sessionUser.id != "")
-            return "logged in";
+        if (args.session["logged"] == "true" && args.session.id != "")
+            return Redirect(args.socket, "/dashboard");
         return server.render("templates/login.html");
     }
-    else if (args.method.type == POST)
+    else if (args.request.method == POST)
     {
-        std::string output;
-
-        std::map<std::string, std::string> content = args.method.params_post.content;
-
-        if (content["fpass"] == "123" && content["fname"] == "manu")
+        if (args.request.content["fpass"] == "123" && args.request.content["fname"] == "manu")
         {
             Session s1 = Session(idGenerator::generateIDstr(), "logged", "true");
             server.sessions.push_back(s1);

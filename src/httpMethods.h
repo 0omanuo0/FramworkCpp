@@ -7,22 +7,21 @@
 #include <map>
 #include <regex>
 
-const std::string GET = "get";
-const std::string POST = "post";
+const std::string GET = "GET";
+const std::string POST = "POST";
 
 class httpMethods
 {
 private:
-    void loadParamsGET(std::string request);
-    void loadParamsPOST(std::string request);
+    void __loadParams(const std::string &request);
 public:
-    std::string type;
+    std::string method;
     std::string route;
     std::string query;
+    std::map<std::string, std::string> content;
 
-    struct httpParamsGET
+    struct httpParams
     {
-        bool is_GET;
         std::string host;
         std::string user_agent;
         std::vector<std::string> accept;
@@ -32,45 +31,23 @@ public:
         std::string DNT;
         std::string connection;
         std::string upgrade_insecure_requests;
-    };
-
-    struct httpParamsPOST
-    {
-        bool is_POST;
-
-        std::string host;
-        std::string user_agent;
-        std::vector<std::string> accept;
-        std::vector<std::string> accept_language;
-        std::vector<std::string> accept_encoding;
         std::string content_type;
         std::string origin;
         std::string referer;
 
-        std::map<std::string, std::string> content;
+
     };
 
-    httpParamsGET params_get;
-    httpParamsPOST params_post;
+    httpParams params;
 
     httpMethods()
     {
-        params_get.is_GET = false;
-        params_post.is_POST = false;
     }
 
     httpMethods(std::string type_h)
-        : type(type_h)
-    {
-        params_get.is_GET = false;
-        params_post.is_POST = false;
-        if (type_h == GET)
-            params_get.is_GET = true;
-        if (type_h == POST)
-            params_post.is_POST = true;
-    };
+        : method(type_h){};
     
 
-    int loadParams(std::string request);
+    int loadParams(const std::string &request);
 };
 #endif

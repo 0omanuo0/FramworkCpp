@@ -78,39 +78,50 @@ bool matchPathWithRoute(const std::string &path, const std::string &routePath, s
     return !std::getline(routePathStream, routeSegment, '/');
 }
 
-int waitSocket(int socket, char buffer[], int buffer_len)
+int waitSocket(int socket, char buffer[], int buffer_len, SSL *ssl)
 {
-    // manejo del socket
-    shutdown(socket, SHUT_WR);
-
     while (recv(socket, buffer, buffer_len, 0) > 0)
         continue; // esperar a que acabe el envio
+
+    if(ssl != NULL){
+        // Cerrar la conexión SSL y el socket
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        close(socket);
+        return 0;
+    }
+
+    // manejo del socket
+    shutdown(socket, SHUT_WR);
 
     close(socket);
 
     return 0;
 }
 
-std::string findCookie(HttpServer &server){
+std::string findCookie(HttpServer &server)
+{
     for (auto &session : server.sessions)
     {
-        if(session.create){
+        if (session.create)
+        {
             session.create = false;
             return session.id;
         }
     }
     return std::string();
-    
 }
 
-
-
-int HttpServer::handleRequest(int socket)
+int HttpServer::handleRequest(int socket, SSL *ssl)
 {
     memset(buffer, 0, sizeof(buffer));
-    if (read(socket, buffer, sizeof(buffer)) < 0)
+    if (read(socket, buffer, sizeof(buffer)) < 0 && !HTTPS)
     {
         std::cerr << "Error al leer la petición HTTP" << std::endl;
+        return -1;
+    }
+    else if(SSL_read(ssl, buffer, sizeof(buffer) - 1) < 0 && HTTPS){
+        std::cerr << "Error al leer la petición HTTPS" << std::endl;
         return -1;
     }
 
@@ -138,11 +149,11 @@ int HttpServer::handleRequest(int socket)
 
             if (matchPathWithRoute(http_method.route, route.path, routeVars))
             {
-                Args arg = Args(routeVars, http_method, session);
+                Args arg = Args(routeVars, http_method, session, ssl);
                 arg.socket = socket;
                 response = route.handler(arg);
                 if (response == REDIRECT)
-                    return waitSocket(socket, buffer, sizeof(buffer));
+                    return waitSocket(socket, buffer, sizeof(buffer), ssl);
                 break;
             }
         }
@@ -153,12 +164,10 @@ int HttpServer::handleRequest(int socket)
             arg.socket = socket;
             response = route.handler(arg);
             if (response == REDIRECT)
-                return waitSocket(socket, buffer, sizeof(buffer));
+                return waitSocket(socket, buffer, sizeof(buffer), ssl);
             break;
         }
     }
-
-    
 
     // encontrar ruta de archivos (si existiera)
     std::string path_to_file;
@@ -179,9 +188,7 @@ int HttpServer::handleRequest(int socket)
         }
     }
 
-
-
-    // for (const auto& pair : routes_files) 
+    // for (const auto& pair : routes_files)
     //     std::cout << pair.path << std::endl;
 
     // encontrar ruta de archivos (si existiera)
@@ -204,29 +211,59 @@ int HttpServer::handleRequest(int socket)
         }
     }
 
-    // respuestas http
-    std::string response_with_header;
-    httpProtoResponse response_server = httpProtoResponse();
+    if (!HTTPS)
+    {
+        // respuestas http
+        std::string response_with_header;
+        httpProtoResponse response_server = httpProtoResponse();
 
-    if (response.empty() && path_to_file.empty()&&file[0].empty())
-        sendResponse(socket, response_server.defaultNotFound() + "<h1>NOT FOUND</h1>");
-    else if (!path_to_file.empty())
-        sendResponse(socket, sendFile(path_to_file));
-    else if(!file[0].empty()){
-        sendResponse(socket, sendFile(file[0], file[1]));
+        if (response.empty() && path_to_file.empty() && file[0].empty())
+            sendResponse(socket, response_server.defaultNotFound() + "<h1>NOT FOUND</h1>");
+        else if (!path_to_file.empty())
+            sendResponse(socket, sendFile(path_to_file));
+        else if (!file[0].empty())
+        {
+            sendResponse(socket, sendFile(file[0], file[1]));
+        }
+        else
+        {
+            response_server.length = response.length();
+            std::string cookie[] = {"SessionID", findCookie(*this)};
+            if (cookie[1].empty())
+                response_with_header += response_server.defaultOK();
+            else
+                response_with_header += response_server.defaultOK_cookie(cookie);
+            response_with_header += response;
+            sendResponse(socket, response_with_header);
+        }
+        waitSocket(socket, buffer, sizeof(buffer), ssl);
     }
     else
     {
-        response_server.length = response.length();
-        std::string cookie[] = {"SessionID", findCookie(*this)};
-        if(cookie[1].empty())
-            response_with_header += response_server.defaultOK();
-        else
-            response_with_header += response_server.defaultOK_cookie(cookie);
-        response_with_header += response;
-        sendResponse(socket, response_with_header);
-    }
-    waitSocket(socket, buffer, sizeof(buffer));
+        // respuestas http
+        std::string response_with_header;
+        httpProtoResponse response_server = httpProtoResponse();
 
+        if (response.empty() && path_to_file.empty() && file[0].empty())
+            sendResponse(ssl, response_server.defaultNotFound() + "<h1>NOT FOUND</h1>");
+        else if (!path_to_file.empty())
+            sendResponse(ssl, sendFile(path_to_file));
+        else if (!file[0].empty())
+        {
+            sendResponse(ssl, sendFile(file[0], file[1]));
+        }
+        else
+        {
+            response_server.length = response.length();
+            std::string cookie[] = {"SessionID", findCookie(*this)};
+            if (cookie[1].empty())
+                response_with_header += response_server.defaultOK();
+            else
+                response_with_header += response_server.defaultOK_cookie(cookie);
+            response_with_header += response;
+            sendResponse(ssl, response_with_header);
+        }
+        waitSocket(socket, buffer, sizeof(buffer), ssl);
+    }
     return 0;
 }

@@ -13,7 +13,7 @@ int httpMethods::loadParams(const std::string &request)
 
     if (pos != std::string::npos){
         route = route.substr(0, pos);
-        if (pos+1 >= route.length())
+        if (pos >= route.length())
             query = route.substr(pos+1);    
     }
     if (!route.empty() && route.back() == '/')// Eliminar el último carácter

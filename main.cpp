@@ -3,10 +3,13 @@
 #include "src/idGenerator.h"
 // #include "httpProto.h"
 
-const int PORT = 8080;
+const int PORT = 9443;
 const int MAX_CONNECTIONS = 5;
 
-HttpServer server(9443);
+SSLcontext context = {"prueba/cert.pem", "prueba/key.pem"};
+
+HttpServer server(PORT, context);
+
 
 std::string home(Args &args)
 {
@@ -15,7 +18,7 @@ std::string home(Args &args)
         std::string admin = args.vars[0];
         std::string id = args.vars[1];
         if (admin == "1234")
-            return Redirect(args.socket, "/dashboard");
+            return Redirect(args.ssl, "/dashboard");
 
         return server.render("templates/index.html", {{"id", id}, {"nombre", admin}});
     }
@@ -24,7 +27,7 @@ std::string home(Args &args)
         // Ruta sin variables
         if (args.session["logged"] == "true" && args.session.id != "")
             return "Bienvenido al dashboard: " + args.session.id;
-        return Redirect(args.socket, "/login");
+        return Redirect(args.ssl, "/login");
         ;
     }
 }
@@ -49,19 +52,20 @@ std::string login(Args &args)
     return "error";
 }
 
+
 int main(int argc, char **argv)
 {
     // Ruta sin variables
     server.addRoute("/dashboard", home, {GET});
 
     server.addRoute("/login", login, {GET, POST});
-
     server.addRoute("/dashboard/<admin>/<id>",
                     home, {GET},
                     std::vector<std::string>(),
                     std::string());
 
     server.addFilesHandler("/files/", "./files/");
+
     server.setup();
     server.startListener(server.serverSocket);
 }

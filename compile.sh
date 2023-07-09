@@ -1,1 +1,1 @@
-g++ *.cpp ./src/*.cpp -o ./bin/httpserver.out
+g++ *.cpp ./src/*.cpp -o ./bin/httpserver.out -lssl -lcrypto

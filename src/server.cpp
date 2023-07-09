@@ -1,8 +1,89 @@
 #include "server.h"
 #include <chrono>
 
+void HttpServer::__startListener(int port){
+    std::vector<std::thread> threads;
+    while (true)
+    {
+        // Aceptar una conexión entrante
+        sockaddr_in clientAddress;
+        socklen_t clientAddressSize = sizeof(clientAddress);
+        int clientSocket = accept(serverSocket, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
+        if (clientSocket < 0)
+        {
+            std::cerr << "Error al aceptar la conexión entrante" << std::endl;
+            continue;
+        }
+
+        SSL *ssl = NULL;
+        // Crear un hilo para manejar la comunicación con el cliente
+        std::thread thread(&HttpServer::handleRequest, this, std::move(clientSocket), std::move(ssl));
+        threads.push_back(std::move(thread));
+
+        // Eliminar hilos terminados
+        threads.erase(std::remove_if(threads.begin(), threads.end(), [](const std::thread &t)
+                                     { return !t.joinable(); }),
+                      threads.end());
+    }
+}
+
+void HttpServer::__startListenerSSL(int port){
+    std::vector<std::thread> threads;
+    while (true)
+    {
+        // Aceptar una conexión entrante
+        sockaddr_in clientAddress;
+        socklen_t clientAddressSize = sizeof(clientAddress);
+        int clientSocket = accept(serverSocket, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
+        if (clientSocket == -1)
+        {
+            std::cerr << "Error al aceptar la conexión entrante" << std::endl;
+            continue;
+        }
+
+        // Crear el objeto SSL
+        SSL *ssl = SSL_new(ssl_ctx);
+        // Asociar el socket con el objeto SSL
+        SSL_set_fd(ssl, clientSocket);
+        // Establecer la conexión SSL
+        if (SSL_accept(ssl) <= 0) {
+            std::cerr << "Error al establecer la conexión SSL." << std::endl;
+            SSL_free(ssl);
+            close(clientSocket);
+            continue;
+        }
+
+        std::thread thread;
+        // Crear un hilo para manejar la comunicación con el cliente
+        thread = std::thread(&HttpServer::handleRequest, this, std::move(clientSocket), std::move(ssl));
+        threads.push_back(std::move(thread));
+
+        // Eliminar hilos terminados
+        threads.erase(std::remove_if(threads.begin(), threads.end(), [](const std::thread &t)
+                                     { return !t.joinable(); }),
+                      threads.end());
+    }
+}
+
+
 int HttpServer::setup()
 {
+    if(HTTPS){
+        // Inicializar OpenSSL
+        SSL_library_init();
+        ssl_ctx = SSL_CTX_new(TLS_server_method());
+
+        // Cargar certificado y clave privada
+        if (SSL_CTX_use_certificate_file(ssl_ctx, context.certificate.c_str(), SSL_FILETYPE_PEM) <= 0) {
+            std::cerr << "Error al cargar el certificado." << std::endl;
+            return 1;
+        }
+        if (SSL_CTX_use_PrivateKey_file(ssl_ctx, context.private_key.c_str(), SSL_FILETYPE_PEM) <= 0) {
+            std::cerr << "Error al cargar la clave privada." << std::endl;
+            return 1;
+        }
+    }
+
 
     // Crear el socket del servidor
     if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -36,28 +117,10 @@ int HttpServer::setup()
 
 void HttpServer::startListener(int port)
 {
-    std::vector<std::thread> threads;
-    while (true)
-    {
-        // Aceptar una conexión entrante
-        sockaddr_in clientAddress;
-        socklen_t clientAddressSize = sizeof(clientAddress);
-        int clientSocket = accept(serverSocket, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
-        if (clientSocket == -1)
-        {
-            std::cerr << "Error al aceptar la conexión entrante" << std::endl;
-            continue;
-        }
-
-        // Crear un hilo para manejar la comunicación con el cliente
-        std::thread thread(&HttpServer::handleRequest, this, clientSocket);
-        threads.push_back(std::move(thread));
-
-        // Eliminar hilos terminados
-        threads.erase(std::remove_if(threads.begin(), threads.end(), [](const std::thread &t)
-                                     { return !t.joinable(); }),
-                      threads.end());
-    }
+    if(HTTPS)
+        __startListenerSSL(port);
+    else
+        __startListener(port);
 }
 
 Session HttpServer::findMatchSession(std::string id)

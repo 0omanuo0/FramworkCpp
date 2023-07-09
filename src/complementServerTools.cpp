@@ -11,6 +11,16 @@ std::string Redirect(int socket, std::string url, std::vector<std::string> cooki
     
     return REDIRECT;
 }
+std::string Redirect(SSL *ssl, std::string url, std::vector<std::string> cookie){///////////areglas cookie
+    httpProtoResponse response;
+
+    if(cookie.empty())
+        HttpServer::sendResponse(ssl, response.defaultRedirect(url));
+    else
+        HttpServer::sendResponse(ssl, response.defaultRedirect_cookie(url, cookie.data()));
+    
+    return REDIRECT;
+}
 
 bool starts_with_prefix(const std::string& url){
     std::string prefix("://");

@@ -82,7 +82,7 @@ private:
 
 public:
     int port = 8080;
-    int serverSocket;
+    int  serverSocket;
     struct sockaddr_in serverAddress, clientAddress;
     char buffer[1024] = {0};
     int addrlen = sizeof(serverAddress);

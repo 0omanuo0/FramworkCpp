@@ -83,7 +83,8 @@ int waitSocket(int socket, char buffer[], int buffer_len, SSL *ssl)
     while (recv(socket, buffer, buffer_len, 0) > 0)
         continue; // esperar a que acabe el envio
 
-    if(ssl != NULL){
+    if (ssl != NULL)
+    {
         // Cerrar la conexión SSL y el socket
         SSL_shutdown(ssl);
         SSL_free(ssl);
@@ -115,14 +116,21 @@ std::string findCookie(HttpServer &server)
 int HttpServer::handleRequest(int socket, SSL *ssl)
 {
     memset(buffer, 0, sizeof(buffer));
-    if (read(socket, buffer, sizeof(buffer)) < 0 && !HTTPS)
+    if (HTTPS)
     {
-        std::cerr << "Error al leer la petición HTTP" << std::endl;
-        return -1;
+        if (SSL_read(ssl, buffer, sizeof(buffer) - 1) < 0)
+        {
+            std::cerr << "Error al leer la petición HTTPS" << std::endl;
+            return -1;
+        }
     }
-    else if(SSL_read(ssl, buffer, sizeof(buffer) - 1) < 0 && HTTPS){
-        std::cerr << "Error al leer la petición HTTPS" << std::endl;
-        return -1;
+    else
+    {
+        if (read(socket, buffer, sizeof(buffer)) < 0)
+        {
+            std::cerr << "Error al leer la petición HTTP" << std::endl;
+            return -1;
+        }
     }
 
     std::string request(buffer);
@@ -151,6 +159,7 @@ int HttpServer::handleRequest(int socket, SSL *ssl)
             {
                 Args arg = Args(routeVars, http_method, session, ssl);
                 arg.socket = socket;
+                arg.ssl = ssl;
                 response = route.handler(arg);
                 if (response == REDIRECT)
                     return waitSocket(socket, buffer, sizeof(buffer), ssl);
@@ -162,6 +171,7 @@ int HttpServer::handleRequest(int socket, SSL *ssl)
             std::vector<std::string> routeVars;
             Args arg = Args(routeVars, http_method, session);
             arg.socket = socket;
+            arg.ssl = ssl;
             response = route.handler(arg);
             if (response == REDIRECT)
                 return waitSocket(socket, buffer, sizeof(buffer), ssl);
@@ -240,7 +250,7 @@ int HttpServer::handleRequest(int socket, SSL *ssl)
     }
     else
     {
-        // respuestas http
+        // respuestas https
         std::string response_with_header;
         httpProtoResponse response_server = httpProtoResponse();
 
@@ -255,7 +265,7 @@ int HttpServer::handleRequest(int socket, SSL *ssl)
         else
         {
             response_server.length = response.length();
-            std::string cookie[] = {"SessionID", findCookie(*this)};
+            std::string cookie[] = {"SessionID", findCookie(*this )};
             if (cookie[1].empty())
                 response_with_header += response_server.defaultOK();
             else

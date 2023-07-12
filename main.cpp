@@ -3,7 +3,7 @@
 #include "src/idGenerator.h"
 // #include "httpProto.h"
 
-const int PORT = 9443;
+const int PORT = 8443;
 const int MAX_CONNECTIONS = 5;
 
 SSLcontext context = {"prueba/cert.pem", "prueba/key.pem"};
@@ -37,7 +37,7 @@ std::string login(Args &args)
     if (args.request.method == GET)
     {
         if (args.session["logged"] == "true" && args.session.id != "")
-            return Redirect(args.socket, "/dashboard");
+            return Redirect(args.ssl, "/dashboard");
         return server.render("templates/login.html");
     }
     else if (args.request.method == POST)
@@ -46,7 +46,7 @@ std::string login(Args &args)
         {
             Session s1 = Session(idGenerator::generateIDstr(), "logged", "true");
             server.sessions.push_back(s1);
-            return Redirect(args.socket, std::string("/dashboard"), {"SessionID", findCookie(server)});
+            return Redirect(args.ssl, std::string("/dashboard"), {"SessionID", findCookie(server)});
         }
     }
     return "error";

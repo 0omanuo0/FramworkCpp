@@ -38,23 +38,6 @@ public:
     std::string defaultNotFound();
     std::string defaultOK_cookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true);
 };
-/*
-void httpProtoResponse::appendParam(std::string name, std::string value)
-{
-    headers.insert(make_pair(name, value));
-}*/
-/*
-void httpProtoResponse::appendCookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true)
-{
-    std::string cookie_s = cookie[0] + "=" + cookie[1] + "; Path=" + path + "; max-Age=" + std::to_string(max_age) + (http_only ? "; HttpOnly" : "");
-    headers.insert(make_pair("Set-Cookie:", cookie_s));
-}
 
-std::string httpProtoResponse::defaultOK_cookie(std::string cookie[2], std::string path = "/", int max_age = 31536000, bool http_only = true)
-{
-    appendCookie(cookie, path, max_age, http_only);
-    return defaultOK();
-}
-*/
 
 #endif

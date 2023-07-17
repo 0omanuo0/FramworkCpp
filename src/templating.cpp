@@ -69,7 +69,7 @@ std::string HttpServer::__render_line(std::string line, std::map<std::string, st
 }
 
 // de momento en el redner solo va urlfor
-std::string HttpServer::render(const std::string &route, std::map<std::string, std::string> data)
+std::string HttpServer::Render(const std::string &route, std::map<std::string, std::string> data)
 {
     if(!std::filesystem::exists(route)){
         std::cout << "file does not exist" << std::endl;
@@ -101,5 +101,5 @@ void HttpServer::urlfor(const std::string &endpoint)
     std::string extension = "txt";
     if (std::string::npos != index)
         extension = endpoint.substr(index + 1);
-    addrouteFile(endpoint, extension);
+    // addrouteFile(endpoint, extension);
 }

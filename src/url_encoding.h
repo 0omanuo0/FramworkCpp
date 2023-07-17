@@ -1,6 +1,7 @@
 #ifndef ENCODE_H_
 #define ENCODE_H_
 
+#pragma once
 #include <string>
 #include <regex>
 

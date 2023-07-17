@@ -1,14 +1,13 @@
 #include <iostream>
 #include "src/server.h"
-#include "src/idGenerator.h"
 // #include "httpProto.h"
 
 const int PORT = 9443;
 const int MAX_CONNECTIONS = 5;
 
-SSLcontext context = {"prueba/cert.pem", "prueba/key.pem"};
+std::string HTTPScontext[] = {"prueba/cert.pem", "prueba/key.pem"};
 
-HttpServer server(PORT, context);
+HttpServer server(PORT, HTTPScontext);
 
 
 std::string home(Args &args)
@@ -20,15 +19,15 @@ std::string home(Args &args)
         if (admin == "1234")
             return Redirect(args.ssl, "/dashboard");
 
-        return server.render("templates/index.html", {{"id", id}, {"nombre", admin}});
+        return server.Render("templates/index.html", {{"id", id}, {"nombre", admin}});
     }
     else
     {
         // Ruta sin variables
         if (args.session["logged"] == "true" && args.session.id != "")
             return "Bienvenido al dashboard: " + args.session.id;
+            
         return Redirect(args.ssl, "/login");
-        ;
     }
 }
 
@@ -37,16 +36,16 @@ std::string login(Args &args)
     if (args.request.method == GET)
     {
         if (args.session["logged"] == "true" && args.session.id != "")
-            return Redirect(args.socket, "/dashboard");
-        return server.render("templates/login.html");
+            return Redirect(args.ssl, "/dashboard");
+        return server.Render("templates/login.html");
     }
     else if (args.request.method == POST)
     {
         if (args.request.content["fpass"] == "123" && args.request.content["fname"] == "manu")
         {
-            Session s1 = Session(idGenerator::generateIDstr(), "logged", "true");
-            server.sessions.push_back(s1);
-            return Redirect(args.socket, std::string("/dashboard"), {"SessionID", findCookie(server)});
+            args.session.createSession();
+            args.session["logged"] = "true";
+            return Redirect(args.ssl, std::string("/dashboard"));
         }
     }
     return "error";
@@ -60,12 +59,8 @@ int main(int argc, char **argv)
 
     server.addRoute("/login", login, {GET, POST});
     server.addRoute("/dashboard/<admin>/<id>",
-                    home, {GET},
-                    std::vector<std::string>(),
-                    std::string());
-
-    server.addFilesHandler("/files/", "./files/");
+                    home, {GET});
 
     server.setup();
-    server.startListener(server.serverSocket);
+    server.startListener();
 }

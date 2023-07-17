@@ -40,12 +40,9 @@ public:
 
     httpParams params;
 
-    httpMethods()
-    {
-    }
+    httpMethods(){}
 
-    httpMethods(std::string type_h)
-        : method(type_h){};
+    httpMethods(std::string req){loadParams(req);};
     
 
     int loadParams(const std::string &request);

@@ -107,3 +107,7 @@ void HttpServer::addRoute(const std::string &path,
                           return handler(args); // Call the original handler with the query and method
                       }});
 }
+void HttpServer::addRouteFile(const std::string &endpoint, const std::string &extension)
+{
+    routesFile.push_back({endpoint, content_type.find(extension)->second});
+}

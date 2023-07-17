@@ -1,6 +1,11 @@
 #include "server.h"
 #include "url_encoding.h"
 
+#ifndef RESPONSE_TYPE
+#define RESPONSE_TYPE
+const std::string response_type[] = {"FOLDER", "FILE", "URL"}; // orden de cada tipo de respuesta
+#endif
+
 std::string __find_cookie(std::vector<Session> &sessions, std::string id)
 {
     for (auto &session : sessions)
@@ -58,12 +63,13 @@ std::string __recv(SSL *ssl)
     return std::string(buffer);
 }
 
-int HttpServer::__create_response(SSL *ssl, const std::string &response, Session &session)
+int HttpServer::__response_create(SSL *ssl, const std::string &response, Session &session)
 {
     // respuestas https
     std::string response_with_header;
     httpProtoResponse response_server;
-    if (response.empty()){
+    if (response.empty())
+    {
         std::string respNOTFOUND = "<h1>NOT FOUND</h1>";
         response_server.length = respNOTFOUND.length();
         __send_response(ssl, response_server.defaultNotFound() + respNOTFOUND);
@@ -99,6 +105,62 @@ int HttpServer::__create_response(SSL *ssl, const std::string &response, Session
     return 0;
 }
 
+int HttpServer::__response_file(SSL *ssl, const std::string &path, const std::string &type){
+    std::vector<std::string> data_to_send = std::vector<std::string>();
+    httpProtoResponse response_serv = httpProtoResponse();
+
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open() && !file.good())
+    {
+        std::cerr << "Error al abrir el archivo: " << path << std::endl;
+        __send_response(ssl, response_serv.defaultNotFound());
+        return -1;
+    }
+
+    // Obtener el tamaño del archivo
+    file.seekg(0, std::ios::end);
+    std::streampos fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Leer el contenido del archivo en un búfer
+    std::vector<char> buffer_f(fileSize);
+    if (!file.read(buffer_f.data(), fileSize))
+    {
+        std::cerr << "Error al leer el archivo: " << path << std::endl;
+        __send_response(ssl, response_serv.defaultNotFound());
+        return -1;
+    }
+
+    // Construir la respuesta HTTP con el encabezado adecuado
+
+    response_serv.appendParam("Content-Type", type);
+    response_serv.appendParam("Content-Disposition", "attachment; filename=\"" + path.substr(path.find_last_of("/") + 1) + "\"");
+    response_serv.length = fileSize;
+
+    data_to_send.push_back(response_serv.defaultOK());
+    data_to_send.push_back(std::string(buffer_f.begin(), buffer_f.end()));
+    __send_response(ssl, data_to_send);
+    return 0;
+}
+
+int HttpServer::__send_response(SSL *ssl, const std::vector<std::string>&response)
+{
+    // Enviar el encabezado y el contenido del archivo al cliente
+    if (SSL_write(ssl, response[0].c_str(), response[0].size()) < 0)
+    {
+        std::cerr << "Error al enviar el encabezado HTTP" << std::endl;
+        return -1;
+    }
+
+    if (SSL_write(ssl, response[1].c_str(), response[1].size()) < 0)
+    {
+        std::cerr << "Error al enviar el contenido del archivo" << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
 int HttpServer::__send_response(SSL *ssl, const std::string &response)
 {
     const char *httpResponse = response.c_str();
@@ -109,6 +171,7 @@ int HttpServer::__send_response(SSL *ssl, const std::string &response)
     }
     return 0;
 }
+
 
 int __wait_socket(int socket, SSL *ssl)
 {
@@ -174,6 +237,7 @@ int HttpServer::__handle_request(int socket, SSL *ssl)
                     setNewSession(session);
                 else if (!session.isEmpty() && session_index != -1)
                     sessions[session_index] = session;
+                __response_create(ssl, response, session);
                 break;
             }
         }
@@ -185,12 +249,28 @@ int HttpServer::__handle_request(int socket, SSL *ssl)
                 setNewSession(session);
             else if (!session.isEmpty() && session_index != -1)
                 sessions[session_index] = session;
+            __response_create(ssl, response, session);
             break;
         }
     }
 
-    __create_response(ssl, response, session);
-    __wait_socket(socket, ssl);
+    // encontrar ruta de archivos (si existiera)
+    if (response.empty())
+    {
+        for (const auto &route_file : routesFile)
+        {
+            std::string::size_type pos = http_method.route.find(route_file.path);
+            if (pos != std::string::npos)
+            {
+                // Coincidencia encontrada, reemplazar la ruta URL con la ruta local
+                std::string localPath = http_method.route;
+                localPath.replace(pos, route_file.path.length(), route_file.path);
+                __response_file(ssl, localPath.substr(1), route_file.type);
+                break;
+            }
+        }
+    }
 
+    __wait_socket(socket, ssl);
     return 0;
 }

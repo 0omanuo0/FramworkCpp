@@ -19,19 +19,23 @@
 #include "idGenerator.h"
 #include "args.h"
 
+#ifndef SERVER_VALUES
+#define SERVER_VALUES
 
 #define BUFFER_SIZE 1024
-
-//const std::string SERVER_VERSION = "Soria/0.0.1b (Unix)";
-
+const std::string SERVER_VERSION = "Soria/0.0.2b (Unix)";
 const std::string REDIRECT = "VOID*REDIRECT";
 
+#endif
+
+#ifndef FILE_TYPE
+#define FILE_TYPE
 const std::map<std::string, std::string> content_type = {
     {"js", "application/javascript"},
     {"css", "text/css"},
     {"html", "text/html"},
     {"txt", "text/plain"}};
-
+#endif
 class HttpServer
 {
 private:
@@ -46,6 +50,11 @@ private:
         std::vector<std::string> methods;
         std::function<std::string(Args &)> handler;
     };
+    struct RouteFile
+    {
+        std::string path;
+        std::string type;
+    };
 
     bool HTTPS = false;
     SSLcontext context;
@@ -55,6 +64,7 @@ private:
     int addrlen = sizeof(serverAddress);
 
     std::vector<Route> routes;
+    std::vector<RouteFile> routesFile;
     std::vector<Session> sessions;
     std::string __not_found = "<h1>NOT FOUND</h1>";
 
@@ -65,7 +75,13 @@ private:
     Session __get_session(int index);
 
     int __handle_request(int socket, SSL *ssl);
-    int __create_response(SSL *ssl, const std::string &response, Session &session);
+
+    int __response_create(SSL *ssl, const std::string &response, Session &session);
+    int __response_file  (SSL *ssl, const std::string &path, const std::string &type);
+    int __response_folder(SSL *ssl, const std::string &response, Session &session);
+
+    int __send_response(SSL *ssl, const std::string &response);
+    int __send_response(SSL *ssl, const std::vector<std::string>&response);
     void __startListenerSSL();
 
 public:
@@ -86,18 +102,17 @@ public:
 
     void startListener();
     int setup();
-    void setNotFound(std::string content){__not_found = content;};
+    void setNotFound(std::string content) { __not_found = content; };
     Session setNewSession(Session session);
 
     void addRoute(const std::string &path,
                   function<std::string(Args &)> handler,
                   std::vector<std::string> methods);
 
-    static int __send_response(SSL *ssl, const std::string &response);
+    void addRouteFile(const std::string &endpoint, const std::string &extension);
 
     void urlfor(const std::string &endpoint);
     std::string Render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>());
-
 };
 
 std::string Redirect(int socket, std::string url);

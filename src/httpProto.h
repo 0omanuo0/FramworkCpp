@@ -11,7 +11,14 @@ const std::string NOTFOUND404 = "HTTP/1.1 404 Not Found";
 const std::string REDIRECT302 = "HTTP/1.1 302 Found";
 const std::string REDIRECT303 = "HTTP/1.1 303 See Other";
 
-const std::string SERVER_VERSION = "Soria/0.0.1b (Unix)";
+#ifndef SERVER_VALUES
+#define SERVER_VALUES
+
+#define BUFFER_SIZE 1024
+const std::string SERVER_VERSION = "Soria/0.0.2b (Unix)";
+const std::string REDIRECT = "VOID*REDIRECT";
+
+#endif
 
 class httpProtoResponse
 {

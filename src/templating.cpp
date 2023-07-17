@@ -101,5 +101,5 @@ void HttpServer::urlfor(const std::string &endpoint)
     std::string extension = "txt";
     if (std::string::npos != index)
         extension = endpoint.substr(index + 1);
-    // addrouteFile(endpoint, extension);
+    addRouteFile(endpoint, extension);
 }

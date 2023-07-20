@@ -2,10 +2,10 @@
 #include "src/server.h"
 // #include "httpProto.h"
 
-const int PORT = 8443;
+const int PORT = 9443;
 const int MAX_CONNECTIONS = 5;
 
-std::string HTTPScontext[] = {"prueba/cert.pem", "prueba/key.pem"};
+std::string HTTPScontext[] = {"cert.pem", "key.pem"};
 
 HttpServer server(PORT, HTTPScontext);
 

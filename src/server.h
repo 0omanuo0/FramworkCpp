@@ -12,6 +12,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <fstream>
+#include <filesystem>
 
 #include "httpMethods.h"
 #include "session.h"
@@ -39,6 +40,7 @@ const std::map<std::string, std::string> content_type = {
 class HttpServer
 {
 private:
+    #pragma region structs
     struct SSLcontext
     {
         std::string certificate;
@@ -55,6 +57,7 @@ private:
         std::string path;
         std::string type;
     };
+    #pragma endregion
 
     bool HTTPS = false;
     SSLcontext context;
@@ -69,6 +72,10 @@ private:
     std::string __not_found = "<h1>NOT FOUND</h1>";
 
     std::string __render_line(std::string line, std::map<std::string, std::string> data = std::map<std::string, std::string>());
+    std::string  __find_expressions(std::string line, const std::map<std::string, std::string> &data);
+    std::string __render_block(const std::string &path, const std::map<std::string, std::string> &data);
+    std::string __find_statements(std::string line, const std::map<std::string, std::string> &data);
+    std::string __render_statements(std::string find, const std::map<std::string, std::string> &data);
     void __route_to(std::string endpoint, std::string extension);
 
     int __find_match_session(std::string id);

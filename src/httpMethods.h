@@ -9,6 +9,7 @@
 
 const std::string GET = "GET";
 const std::string POST = "POST";
+const std::string DELETE = "DELETE";
 
 class httpMethods
 {

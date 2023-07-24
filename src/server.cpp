@@ -1,4 +1,25 @@
 #include "server.h"
+#include "templating.h"
+
+HttpServer::HttpServer()
+{
+    template_render->server = this;
+}
+HttpServer::HttpServer(int port_server, int max_connections) 
+    : port(port_server), MAX_CONNECTIONS(max_connections)
+{
+    template_render->server = this;
+}
+HttpServer::HttpServer(int port_server, const std::string SSLcontext_server[], int max_connections)
+    : port(port_server), MAX_CONNECTIONS(max_connections)
+{
+    context.certificate = SSLcontext_server[0];
+    context.private_key = SSLcontext_server[1];
+    HTTPS = true;
+
+    template_render = new Templating();
+    template_render->server = this;
+}
 
 void HttpServer::__startListenerSSL()
 {
@@ -110,4 +131,12 @@ void HttpServer::addRoute(const std::string &path,
 void HttpServer::addRouteFile(const std::string &endpoint, const std::string &extension)
 {
     routesFile.push_back({endpoint, content_type.find(extension)->second});
+}
+void HttpServer::urlfor(const std::string &endpoint)
+{
+    std::size_t index = endpoint.find_last_of(".");
+    std::string extension = "txt";
+    if (std::string::npos != index)
+        extension = endpoint.substr(index + 1);
+    addRouteFile(endpoint, extension);
 }

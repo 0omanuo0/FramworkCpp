@@ -1,10 +1,25 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{urlfor('/templates/main.css')}}">
+</head>
+
 <body>
-    <form action="/login" method="post">
+    <form action="/login" method="post" class="p_section p_block">
         <label for="name">Name:</label>
         <input type="text" id="fname" name="fname"><br><br>
         <label for="pass">Pass:</label>
         <input type="password" id="fpass" name="fpass"><br><br>
         <input type="submit" value="Submit">
     </form>
+    {{fpass}}, {{fname}}
+    <section class="p_section">
+        {% for x in fpass %}
+            <div class="p_block">
+                <h3>Esto es un bloque</h3>
+                <p>Dato: {{ x }}</p>
+            </div>
+        {% endfor %}
+    </section>
 </body>
+</html>

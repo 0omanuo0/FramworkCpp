@@ -12,6 +12,7 @@ public:
     string id;
     map<string, string> values;
     bool create;
+    bool deleted = false;
     bool isEmpty()
     {
         return id.empty() ? true : false;
@@ -31,6 +32,11 @@ public:
             id = idGenerator::generateIDstr();
             create = true;
         }
+    }
+    void destroySession(){
+        id = "";
+        deleted = true;
+        values.clear();
     }
     string &operator[](string key)
     {

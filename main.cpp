@@ -9,26 +9,22 @@ std::string HTTPScontext[] = {"cert.pem", "key.pem"};
 
 HttpServer server(PORT, HTTPScontext);
 
-
 std::string home(Args &args)
 {
-    if (!args.vars.empty())
-    {
-        std::string admin = args.vars[0];
-        std::string id = args.vars[1];
-        if (admin == "1234")
-            return Redirect(args.ssl, "/dashboard");
+    // Ruta sin variables
+    if (args.session["logged"] == "true" && args.session.id != "")
+        return "Bienvenido al dashboard: " + args.session.id + "<a href=\"/logout\">Cerrar sesion</a>";
 
-        return server.Render("templates/index.html", {{"id", id}, {"nombre", admin}});
-    }
-    else
-    {
-        // Ruta sin variables
-        if (args.session["logged"] == "true" && args.session.id != "")
-            return "Bienvenido al dashboard: " + args.session.id;
-            
-        return Redirect(args.ssl, "/login");
-    }
+    return Redirect(args.ssl, "/login");
+}
+std::string home_args(Args &args)
+{
+    std::string admin = args.vars[0];
+    std::string id = args.vars[1];
+    if (admin == "1234")
+        return Redirect(args.ssl, "/dashboard");
+
+    return server.Render("templates/index.html", {{"id", id}, {"nombre", admin}});
 }
 
 std::string login(Args &args)
@@ -37,7 +33,7 @@ std::string login(Args &args)
     {
         if (args.session["logged"] == "true" && args.session.id != "")
             return Redirect(args.ssl, "/dashboard");
-        return server.Render("templates/login.html");
+        return server.Render("templates/login.html", {{"fpass", R"(["123","456","789"])"}, {"fname", "manu"}});
     }
     else if (args.request.method == POST)
     {
@@ -51,6 +47,12 @@ std::string login(Args &args)
     return "error";
 }
 
+std::string logout(Args &args)
+{
+    if (args.session["logged"] == "true" && args.session.id != "")
+        args.session.destroySession();
+    return Redirect(args.ssl, "/login");
+}
 
 int main(int argc, char **argv)
 {
@@ -58,8 +60,9 @@ int main(int argc, char **argv)
     server.addRoute("/dashboard", home, {GET});
 
     server.addRoute("/login", login, {GET, POST});
+    server.addRoute("/logout", logout, {GET});
     server.addRoute("/dashboard/<admin>/<id>",
-                    home, {GET});
+                    home_args, {GET});
 
     server.setup();
     server.startListener();

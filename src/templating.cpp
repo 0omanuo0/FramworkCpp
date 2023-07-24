@@ -1,7 +1,5 @@
-#include <fstream>
+#include "templating.h"
 #include "server.h"
-#include "idGenerator.h"
-#include "tinyexpr.h"
 
 namespace fs = std::filesystem;
 void ListFilesAndFolders(const fs::path &directory, int level = 0)
@@ -54,7 +52,43 @@ double __evaluate_expression(std::string expression, const std::map<std::string,
         return std::numeric_limits<double>::quiet_NaN();
 }
 
-std::string HttpServer::__find_expressions(std::string line, const std::map<std::string, std::string> &data)
+// Function to remove whitespace characters from the start and end of the string
+std::string trimWhitespace(const std::string& str) {
+    size_t firstNonWhitespace = str.find_first_not_of(" \t\n\v\f\r");
+    if (firstNonWhitespace == std::string::npos)
+        return ""; // The string contains only whitespace characters
+
+    size_t lastNonWhitespace = str.find_last_not_of(" \t\n\v\f\r");
+    return str.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1);
+}
+
+// Function that returns an string array ["a", "b", "c"] from a string "[a, b, c]" if not, returns an empty array
+std::vector<std::string> FindArray(const std::string &content){
+    if(content[0] != '[' || content[content.length()-1] != ']')
+        return {};
+    
+    std::vector<std::string> result;
+    std::string token;
+    std::stringstream ss(content.substr(1, content.length() - 2));
+
+    while (std::getline(ss, token, ','))
+        result.push_back(token);
+    
+    for(auto &n : result){
+        if(trimWhitespace(n).find(' ') != std::string::npos)
+            return {};
+        if(n[0] == '\"' && n[n.length()-1] == '\"')
+            n = n.substr(1, n.length() - 2);
+        else 
+            return {};
+    }
+
+    if (result.size() == 0)
+        return {};
+    return result;
+}
+
+std::string Templating::__find_expressions(std::string line, const std::map<std::string, std::string> &data)
 {
 
     std::string lineF;
@@ -98,7 +132,7 @@ std::string HttpServer::__find_expressions(std::string line, const std::map<std:
             {
                 // Extraemos el contenido entre los paréntesis de urlfor y lo agregamos al resultado
                 std::string path = match_f[1].str().substr(1, match_f[1].str().length() - 2);
-                urlfor(path);
+                server->urlfor(path);
                 lineF += path;
             }
             else
@@ -128,7 +162,7 @@ std::string HttpServer::__find_expressions(std::string line, const std::map<std:
     return lineF;
 }
 
-std::string HttpServer::__render_block(const std::string &path, const std::map<std::string, std::string> &data){
+std::string Templating::__render_block(const std::string &path, const std::map<std::string, std::string> &data){
     if (!std::filesystem::exists(path))
     {
         std::cout << "file does not exist" << std::endl;
@@ -151,7 +185,7 @@ std::string HttpServer::__render_block(const std::string &path, const std::map<s
         while (std::getline(file, line) && !std::regex_search(line, endblock_pattern))
         {
             line = __find_expressions(line, data);
-            rendered += __find_statements(line, data);
+            rendered += __find_statements(line, file,data);
         }
         file.close();
     }
@@ -160,7 +194,7 @@ std::string HttpServer::__render_block(const std::string &path, const std::map<s
     return rendered;
 }
 
-std::string HttpServer::__render_statements(std::string find, const std::map<std::string, std::string> &data)
+std::string Templating::__render_statements(std::string find, const std::map<std::string, std::string> &data)
 {
     std::string lineF;
     // Definimos otra expresión regular para buscar patrones del tipo 'include "data" '
@@ -182,7 +216,51 @@ std::string HttpServer::__render_statements(std::string find, const std::map<std
     return lineF;
 }
 
-std::string HttpServer::__find_statements(std::string line, const std::map<std::string, std::string> &data)
+std::string Templating::__render_for(std::string find, std::ifstream &file, const std::map<std::string, std::string> &data){
+    std::string rendered;
+    if (!file.is_open())
+    {
+        std::cout << "error opening file" << std::endl;
+        ListFilesAndFolders(".");
+        return "";
+    }
+    
+    std::smatch match_f;
+    std::regex for_pattern(R"(\bfor\s+([^{}]+)\s+in\s+([^{ }]+)\s*)");
+    if(!std::regex_search(find, match_f, for_pattern))
+        return "";
+
+    std::string item_array[2] = {match_f[1].str(), match_f[2].str()};
+    std::vector<std::string> content;
+
+    for(auto it : data){
+        if(it.first == item_array[1]){
+            content = FindArray(it.second);
+            if(content.empty())
+                return "";
+            break;
+        }
+    }
+    std::streampos for_pos = file.tellg();
+
+    for(auto &it : content){
+        file.seekg(for_pos);
+
+        std::string line;
+        std::smatch match_f;
+
+        std::regex endfor_pattern(R"(\{\%\s+endfor\s+\%\})");
+
+        while (std::getline(file, line) && !std::regex_search(line, endfor_pattern))
+        {
+            line = __find_expressions(line, {{item_array[0], it}});
+            rendered += __find_statements(line, file, {{item_array[0], it}});
+        }
+    }
+    return rendered;
+}
+
+std::string Templating::__find_statements(std::string line, std::ifstream &file, const std::map<std::string, std::string> &data)
 {
     std::string lineF;
 
@@ -212,7 +290,12 @@ std::string HttpServer::__find_statements(std::string line, const std::map<std::
         // Extraemos el contenido dentro de las llaves {% ... %}
         std::string find = match[1].str();
 
-        lineF += __render_statements(find, data);
+        if(find.substr(0,3) == "for"){
+            lineF += __render_for(find, file, data);
+        }
+        else{
+            lineF += __render_statements(find, data);
+        }
 
         // Actualizamos la posición actual para continuar buscando después de la coincidencia actual
         currentPosition = matchPosition + match.length();
@@ -226,9 +309,12 @@ std::string HttpServer::__find_statements(std::string line, const std::map<std::
     return lineF;
 }
 
-// de momento en el redner solo va urlfor
-std::string HttpServer::Render(const std::string &route, std::map<std::string, std::string> data)
+std::string Templating::Render(const std::string &route, const std::map<std::string, std::string> &data)
 {
+    if(server == nullptr){
+        std::cout << "Server not initialized, error pointer reference" << std::endl;
+        return "";
+    }
     if (!std::filesystem::exists(route))
     {
         std::cout << "file does not exist" << std::endl;
@@ -244,20 +330,11 @@ std::string HttpServer::Render(const std::string &route, std::map<std::string, s
         while (std::getline(file, line))
         {
             line = __find_expressions(line, data);
-            rendered += __find_statements(line, data);
+            rendered += __find_statements(line, file, data);
         }
         file.close();
     }
     else
         return "";
     return rendered;
-}
-
-void HttpServer::urlfor(const std::string &endpoint)
-{
-    std::size_t index = endpoint.find_last_of(".");
-    std::string extension = "txt";
-    if (std::string::npos != index)
-        extension = endpoint.substr(index + 1);
-    addRouteFile(endpoint, extension);
 }

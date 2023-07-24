@@ -19,6 +19,7 @@
 #include "httpProto.h"
 #include "idGenerator.h"
 #include "args.h"
+#include "templating.h"
 
 #ifndef SERVER_VALUES
 #define SERVER_VALUES
@@ -37,28 +38,30 @@ const std::map<std::string, std::string> content_type = {
     {"html", "text/html"},
     {"txt", "text/plain"}};
 #endif
+
+#pragma region structs
+struct SSLcontext
+{
+    std::string certificate;
+    std::string private_key;
+};
+struct Route
+{
+    std::string path;
+    std::vector<std::string> methods;
+    std::function<std::string(Args &)> handler;
+};
+struct RouteFile
+{
+    std::string path;
+    std::string type;
+};
+#pragma endregion
+
+
 class HttpServer
 {
 private:
-    #pragma region structs
-    struct SSLcontext
-    {
-        std::string certificate;
-        std::string private_key;
-    };
-    struct Route
-    {
-        std::string path;
-        std::vector<std::string> methods;
-        std::function<std::string(Args &)> handler;
-    };
-    struct RouteFile
-    {
-        std::string path;
-        std::string type;
-    };
-    #pragma endregion
-
     bool HTTPS = false;
     SSLcontext context;
     SSL_CTX *ssl_ctx;
@@ -71,12 +74,7 @@ private:
     std::vector<Session> sessions;
     std::string __not_found = "<h1>NOT FOUND</h1>";
 
-    std::string __render_line(std::string line, std::map<std::string, std::string> data = std::map<std::string, std::string>());
-    std::string  __find_expressions(std::string line, const std::map<std::string, std::string> &data);
-    std::string __render_block(const std::string &path, const std::map<std::string, std::string> &data);
-    std::string __find_statements(std::string line, const std::map<std::string, std::string> &data);
-    std::string __render_statements(std::string find, const std::map<std::string, std::string> &data);
-    void __route_to(std::string endpoint, std::string extension);
+    Templating* template_render;
 
     int __find_match_session(std::string id);
     Session __get_session(int index);
@@ -97,15 +95,9 @@ public:
 
     int MAX_CONNECTIONS = 10;
     std::string default_session_name = "SessionID";
-
-    HttpServer(int port_server, int max_connections = 10) : port(port_server), MAX_CONNECTIONS(max_connections) {}
-    HttpServer(int port_server, const std::string SSLcontext_server[], int max_connections = 10)
-        : port(port_server), MAX_CONNECTIONS(max_connections)
-    {
-        context.certificate = SSLcontext_server[0];
-        context.private_key = SSLcontext_server[1];
-        HTTPS = true;
-    }
+    HttpServer();
+    HttpServer(int port_server, int max_connections = 10);
+    HttpServer(int port_server, const std::string SSLcontext_server[], int max_connections = 10);
 
     void startListener();
     int setup();
@@ -119,8 +111,12 @@ public:
     void addRouteFile(const std::string &endpoint, const std::string &extension);
 
     void urlfor(const std::string &endpoint);
-    std::string Render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>());
+    std::string Render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>()){
+        return template_render->Render(route, data);
+    };
 };
+
+
 
 std::string Redirect(int socket, std::string url);
 std::string Redirect(SSL *ssl, std::string url);

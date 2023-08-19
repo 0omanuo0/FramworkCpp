@@ -13,18 +13,9 @@ public:
     map<string, string> values;
     bool create;
     bool deleted = false;
-    bool isEmpty()
-    {
-        return id.empty() ? true : false;
-    }
-    void addValue(string key, string value)
-    {
-        values.insert(make_pair(key, value));
-    }
-    void modifyValue(string key, string value)
-    {
-        values[key] = value;
-    }
+    bool isEmpty() { return id.empty() ? true : false; }
+    void addValue(string key, string value) { values.insert(make_pair(key, value)); }
+    void modifyValue(string key, string value) { values[key] = value; }
     void createSession()
     {
         if (isEmpty())
@@ -33,15 +24,13 @@ public:
             create = true;
         }
     }
-    void destroySession(){
+    void destroySession()
+    {
         id = "";
         deleted = true;
         values.clear();
     }
-    string &operator[](string key)
-    {
-        return values[key];
-    }
+    string &operator[](string key) { return values[key]; }
 
     Session() { create = false; }
     Session(string id_f) : id(id_f) { create = true; }

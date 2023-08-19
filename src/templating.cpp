@@ -1,5 +1,4 @@
 #include "templating.h"
-#include "server.h"
 
 namespace fs = std::filesystem;
 void ListFilesAndFolders(const fs::path &directory, int level = 0)
@@ -53,7 +52,8 @@ double __evaluate_expression(std::string expression, const std::map<std::string,
 }
 
 // Function to remove whitespace characters from the start and end of the string
-std::string trimWhitespace(const std::string& str) {
+std::string trimWhitespace(const std::string &str)
+{
     size_t firstNonWhitespace = str.find_first_not_of(" \t\n\v\f\r");
     if (firstNonWhitespace == std::string::npos)
         return ""; // The string contains only whitespace characters
@@ -63,23 +63,25 @@ std::string trimWhitespace(const std::string& str) {
 }
 
 // Function that returns an string array ["a", "b", "c"] from a string "[a, b, c]" if not, returns an empty array
-std::vector<std::string> FindArray(const std::string &content){
-    if(content[0] != '[' || content[content.length()-1] != ']')
+std::vector<std::string> FindArray(const std::string &content)
+{
+    if (content[0] != '[' || content[content.length() - 1] != ']')
         return {};
-    
+
     std::vector<std::string> result;
     std::string token;
     std::stringstream ss(content.substr(1, content.length() - 2));
 
     while (std::getline(ss, token, ','))
         result.push_back(token);
-    
-    for(auto &n : result){
-        if(trimWhitespace(n).find(' ') != std::string::npos)
+
+    for (auto &n : result)
+    {
+        if (trimWhitespace(n).find(' ') != std::string::npos)
             return {};
-        if(n[0] == '\"' && n[n.length()-1] == '\"')
+        if (n[0] == '\"' && n[n.length() - 1] == '\"')
             n = n.substr(1, n.length() - 2);
-        else 
+        else
             return {};
     }
 
@@ -144,8 +146,9 @@ std::string Templating::__find_expressions(std::string line, const std::map<std:
                     lineF += find; // Si no se encuentra en el mapa 'data', agregamos el contenido original al resultado
             }
         }
-        else{
-            if(result == static_cast<int>(result))
+        else
+        {
+            if (result == static_cast<int>(result))
                 lineF += std::to_string(static_cast<int>(result));
         }
 
@@ -162,43 +165,57 @@ std::string Templating::__find_expressions(std::string line, const std::map<std:
     return lineF;
 }
 
-std::string Templating::__render_block(const std::string &path, const std::map<std::string, std::string> &data){
+// This function takes a file path and a map of data as input and returns a rendered string.
+std::string Templating::__render_block(const std::string &path, const std::map<std::string, std::string> &data)
+{
+    // Check if the specified file path exists.
     if (!std::filesystem::exists(path))
     {
+        // If the file doesn't exist, print an error message and list files and folders in the current directory.
         std::cout << "file does not exist" << std::endl;
-        ListFilesAndFolders(".");
-        return "";
+        ListFilesAndFolders("."); // Assuming ListFilesAndFolders is a defined function elsewhere.
+        return ""; // Return an empty string since rendering is not possible.
     }
 
+    // Open the specified file for reading.
     std::ifstream file(path);
     std::string rendered;
+
+    // Check if the file is successfully opened.
     if (file.is_open())
     {
         std::string line;
         std::getline(file, line);
 
-        std::regex block_pattern(R"(\{%\s+block\s+content\s+%\})");
-        std::regex endblock_pattern(R"(\{%\s+endblock\s+content\s+%\})");
-        while(!std::regex_search(line, block_pattern))
+        // Find the start of the block content in the file.
+        while (!std::regex_search(line, block_pattern))
             std::getline(file, line);
 
+        // Process lines within the block until the end of the block is reached.
         while (std::getline(file, line) && !std::regex_search(line, endblock_pattern))
         {
-            line = __find_expressions(line, data);
-            rendered += __find_statements(line, file,data);
+            // Replace expressions in the line using data from the map.
+            line = __find_expressions(line, data); // Assuming __find_expressions is defined elsewhere.
+
+            // Append processed line to the rendered content.
+            rendered += __find_statements(line, file, data); // Assuming __find_statements is defined elsewhere.
         }
+
+        // Close the file after processing.
         file.close();
     }
     else
+        // Return an empty string if the file couldn't be opened.
         return "";
+
+    // Return the rendered content.
     return rendered;
 }
+
 
 std::string Templating::__render_statements(std::string find, const std::map<std::string, std::string> &data)
 {
     std::string lineF;
-    // Definimos otra expresión regular para buscar patrones del tipo 'include "data" '
-    std::regex patron_include(R"(\binclude\s+"([^"]*)\s*)");
 
     std::smatch match_f;
 
@@ -216,47 +233,100 @@ std::string Templating::__render_statements(std::string find, const std::map<std
     return lineF;
 }
 
-std::string Templating::__render_for(std::string find, std::ifstream &file, const std::map<std::string, std::string> &data){
-    std::string rendered;
+std::string Templating::__render_for(std::string find, std::ifstream &file, const std::map<std::string, std::string> &data)
+{
+    std::string rendered; // Will store the final rendered content of the 'for' loop.
+    
+    // Check if the provided file is open.
+    if (!file.is_open())
+    {
+        std::cout << "error opening file" << std::endl; // Print an error message.
+        ListFilesAndFolders("."); // Call a function to list files and folders in the current directory (implementation not shown).
+        return ""; // Return an empty string since rendering is not possible.
+    }
+    
+    std::smatch match_f;
+    // Use a regular expression to search for the 'for' pattern in the 'find' string.
+    if (!std::regex_search(find, match_f, for_pattern))
+        return ""; // Return an empty string if the 'for' pattern is not found.
+    
+    std::string item_array[2] = {match_f[1].str(), match_f[2].str()}; // Extracted values from the pattern.
+    std::vector<std::string> content; // Will store the content of the array corresponding to the 'for' loop.
+    
+    // Iterate through the provided data map to find a match for the specified key.
+    for (auto it : data)
+    {
+        if (it.first == item_array[1])
+        {
+            content = FindArray(it.second); // Call a function to find an array by the key (implementation not shown).
+            if (content.empty())
+                return ""; // Return an empty string if the array is empty.
+            break;
+        }
+    }
+    std::streampos for_pos = file.tellg(); // Get the current position in the file for later seeking.
+    
+    // Iterate through the 'content' vector, which represents the items in the array.
+    for (auto &it : content)
+    {
+        file.seekg(for_pos); // Seek to the position where the 'for' loop starts in the file.
+        
+        std::string line;
+        std::smatch match_f;
+        
+        // Read lines from the file until the 'endfor' pattern is encountered.
+        while (std::getline(file, line) && !std::regex_search(line, endfor_pattern))
+        {
+            line = __find_expressions(line, {{item_array[0], it}}); // Call a function to replace expressions (implementation not shown).
+            rendered += __find_statements(line, file, {{item_array[0], it}}); // Call a function to process statements (implementation not shown).
+        }
+    }
+    
+    return rendered; // Return the fully rendered content of the 'for' loop.
+}
+
+std::string Templating::__render_if(std::string find, std::ifstream &file, const std::map<std::string, std::string> &data)
+{
+    std::string rendered, line;
+
     if (!file.is_open())
     {
         std::cout << "error opening file" << std::endl;
         ListFilesAndFolders(".");
         return "";
     }
-    
+
     std::smatch match_f;
-    std::regex for_pattern(R"(\bfor\s+([^{}]+)\s+in\s+([^{ }]+)\s*)");
-    if(!std::regex_search(find, match_f, for_pattern))
+
+    if (!std::regex_search(find, match_f, if_pattern))
         return "";
 
-    std::string item_array[2] = {match_f[1].str(), match_f[2].str()};
-    std::vector<std::string> content;
-
-    for(auto it : data){
-        if(it.first == item_array[1]){
-            content = FindArray(it.second);
-            if(content.empty())
-                return "";
-            break;
-        }
-    }
-    std::streampos for_pos = file.tellg();
-
-    for(auto &it : content){
-        file.seekg(for_pos);
-
-        std::string line;
-        std::smatch match_f;
-
-        std::regex endfor_pattern(R"(\{\%\s+endfor\s+\%\})");
-
-        while (std::getline(file, line) && !std::regex_search(line, endfor_pattern))
+    std::string expression = match_f[1].str();
+    if ((bool)__evaluate_expression(expression, data))
+    {
+        while (std::getline(file, line) && !std::regex_search(line, endif_pattern))
         {
-            line = __find_expressions(line, {{item_array[0], it}});
-            rendered += __find_statements(line, file, {{item_array[0], it}});
+            if(std::regex_search(line, else_pattern)){
+                while (std::getline(file, line) && !std::regex_search(line, endif_pattern))
+                    continue;
+                break;
+            }
+            line = __find_expressions(line, data);
+            rendered += __find_statements(line, file, data);
         }
     }
+    else
+    {
+        while (std::getline(file, line) && !std::regex_search(line, else_pattern))
+            continue;
+
+        while (std::getline(file, line) && !std::regex_search(line, endif_pattern))
+        {
+            line = __find_expressions(line, data);
+            rendered += __find_statements(line, file, data);
+        }
+    }
+
     return rendered;
 }
 
@@ -290,10 +360,16 @@ std::string Templating::__find_statements(std::string line, std::ifstream &file,
         // Extraemos el contenido dentro de las llaves {% ... %}
         std::string find = match[1].str();
 
-        if(find.substr(0,3) == "for"){
+        if (find.substr(0, find.find(" ")) == "for")
+        {
             lineF += __render_for(find, file, data);
         }
-        else{
+        else if (find.substr(0, find.find(" ")) == "if")
+        {
+            lineF += __render_if(find, file, data);
+        }
+        else
+        {
             lineF += __render_statements(find, data);
         }
 
@@ -311,7 +387,8 @@ std::string Templating::__find_statements(std::string line, std::ifstream &file,
 
 std::string Templating::Render(const std::string &route, const std::map<std::string, std::string> &data)
 {
-    if(server == nullptr){
+    if (server == nullptr)
+    {
         std::cout << "Server not initialized, error pointer reference" << std::endl;
         return "";
     }

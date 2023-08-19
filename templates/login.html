@@ -12,12 +12,15 @@
         <input type="password" id="fpass" name="fpass"><br><br>
         <input type="submit" value="Submit">
     </form>
-    {{fpass}}, {{fname}}
     <section class="p_section">
-        {% for x in fpass %}
+        {% for x in data %}
             <div class="p_block">
-                <h3>Esto es un bloque</h3>
-                <p>Dato: {{ x }}</p>
+                {% if x > 300 %}
+                    <h3>Esto es un bloque</h3>
+                    <p>Dato: {{ x }}</p>
+                {% else %}
+                    <h3>NO</h3>
+                {% endif %}
             </div>
         {% endfor %}
     </section>

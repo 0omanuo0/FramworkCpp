@@ -2,7 +2,7 @@
 #include "src/server.h"
 // #include "httpProto.h"
 
-const int PORT = 9443;
+const int PORT = 8443;
 const int MAX_CONNECTIONS = 5;
 
 std::string HTTPScontext[] = {"cert.pem", "key.pem"};
@@ -33,7 +33,7 @@ std::string login(Args &args)
     {
         if (args.session["logged"] == "true" && args.session.id != "")
             return Redirect(args.ssl, "/dashboard");
-        return server.Render("templates/login.html", {{"fpass", R"(["123","456","789"])"}, {"fname", "manu"}});
+        return server.Render("templates/login.html", {{"data", R"(["123","456","789"])"}, {"id", args.session.id}});
     }
     else if (args.request.method == POST)
     {

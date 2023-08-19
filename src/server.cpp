@@ -5,7 +5,8 @@ HttpServer::HttpServer()
 {
     template_render->server = this;
 }
-HttpServer::HttpServer(int port_server, int max_connections) 
+
+HttpServer::HttpServer(int port_server, int max_connections)
     : port(port_server), MAX_CONNECTIONS(max_connections)
 {
     template_render->server = this;
@@ -20,6 +21,11 @@ HttpServer::HttpServer(int port_server, const std::string SSLcontext_server[], i
     template_render = new Templating();
     template_render->server = this;
 }
+
+std::string HttpServer::Render(const std::string &route, std::map<std::string, std::string> data)
+{
+    return template_render->Render(route, data);
+};
 
 void HttpServer::__startListenerSSL()
 {

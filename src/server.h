@@ -58,6 +58,7 @@ struct RouteFile
 };
 #pragma endregion
 
+class Templating;
 
 class HttpServer
 {
@@ -74,7 +75,7 @@ private:
     std::vector<Session> sessions;
     std::string __not_found = "<h1>NOT FOUND</h1>";
 
-    Templating* template_render;
+    Templating *template_render;
 
     int __find_match_session(std::string id);
     Session __get_session(int index);
@@ -82,12 +83,15 @@ private:
     int __handle_request(int socket, SSL *ssl);
 
     int __response_create(SSL *ssl, const std::string &response, Session &session);
-    int __response_file  (SSL *ssl, const std::string &path, const std::string &type);
+    int __response_file(SSL *ssl, const std::string &path, const std::string &type);
     int __response_folder(SSL *ssl, const std::string &response, Session &session);
 
     int __send_response(SSL *ssl, const std::string &response);
-    int __send_response(SSL *ssl, const std::vector<std::string>&response);
+    int __send_response(SSL *ssl, const std::vector<std::string> &response);
     void __startListenerSSL();
+
+    void addRouteFile(const std::string &endpoint, const std::string &extension);
+    Session setNewSession(Session session);
 
 public:
     int port = 8080;
@@ -95,31 +99,53 @@ public:
 
     int MAX_CONNECTIONS = 10;
     std::string default_session_name = "SessionID";
+    /// @brief Constructor of the server
     HttpServer();
+    /// @brief Constructor of the server, set the port and the max connections (default 10)
     HttpServer(int port_server, int max_connections = 10);
+    /// @brief Constructor of the server, set the port, the SSL context and the max connections (default 10)
     HttpServer(int port_server, const std::string SSLcontext_server[], int max_connections = 10);
 
+    /// @brief Function to start the listener
     void startListener();
-    int setup();
-    void setNotFound(std::string content) { __not_found = content; };
-    Session setNewSession(Session session);
 
+    /// @brief Function to setup the server
+    /// @return If dont return 0 the server is not setup correctly
+    int setup();
+    
+    /// @brief Function to set the content of the 404 page
+    /// @param content The content of the 404 page
+    void setNotFound(std::string content) { __not_found = content; };
+
+    /// @brief Function create a new route to the server
+    /// @param path Route to the endpoint in browser
+    /// @param handler The function to handle the request
+    /// @param methods The methods allowed to access the endpoint
     void addRoute(const std::string &path,
                   function<std::string(Args &)> handler,
                   std::vector<std::string> methods);
 
-    void addRouteFile(const std::string &endpoint, const std::string &extension);
-
+    /// @brief Function add a file to the server
+    /// @param endpoint Route to the file, also the route to the file in the browse
     void urlfor(const std::string &endpoint);
-    std::string Render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>()){
-        return template_render->Render(route, data);
-    };
+
+    /// @brief Function to render a jinja or html file
+    /// @param route Route to the file
+    /// @param data Content to pass to the file
+    /// @return The rendered file as string to send to the client
+    std::string Render(const std::string &route, std::map<std::string, std::string> data = std::map<std::string, std::string>());
 };
-
-
-
+/// @brief Function to redirect to a url
+/// @param socket The socket to send the response
+/// @param url The endpoint to redirect to
+/// @return The rendered file as string to send to the client
 std::string Redirect(int socket, std::string url);
+/// @brief Function to redirect to a url
+/// @param ssl The SSL pointer to send the response
+/// @param url The endpoint to redirect to
+/// @return The rendered file as string to send to the client
 std::string Redirect(SSL *ssl, std::string url);
+/// @brief Function to find the cookie
 std::string findCookie(HttpServer &server);
 
 #endif // SERVER_H

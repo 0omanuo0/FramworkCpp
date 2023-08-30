@@ -28,7 +28,7 @@ bool starts_with_prefix(const std::string& url){
 
 int HttpServer::__find_match_session(std::string id)
 {
-    for (int i = 0; i < sessions.size(); i++)
+    for (int i = 0; i < (int)sessions.size(); i++)
         if (sessions[i].id == id)
             return i; // Devuelve la posición en el vector
     
@@ -36,7 +36,7 @@ int HttpServer::__find_match_session(std::string id)
 }
 
 Session HttpServer::__get_session(int index){
-    if (index >= 0 && index < sessions.size())
+    if (index >= 0 && index < (int)sessions.size())
         return sessions[index]; // Devuelve la sesión correspondiente al índice
     else
         return Session(); // Devuelve una sesión vacía si el número está fuera de rango

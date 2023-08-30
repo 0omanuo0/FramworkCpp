@@ -11,6 +11,7 @@ int httpMethods::loadParams(const std::string &request)
 
     std::size_t pos = route.find('?');
 
+
     if (pos != std::string::npos){
         route = route.substr(0, pos);
         if (pos >= route.length())
@@ -18,7 +19,9 @@ int httpMethods::loadParams(const std::string &request)
     }
     if (!route.empty() && route.back() == '/')// Eliminar el último carácter
             route.pop_back();
-
+    if(route.empty())
+        route = "/";
+        
     if (method.empty())
     {
         method = request.substr(0, request.find(" "));
@@ -110,10 +113,12 @@ void httpMethods::__loadParams(const std::string &request)
     }
 
     if(!content_length.empty()){
-        std::regex pattern("([^=&]+)=([^&]*)");
+        std::regex pattern("^\r\n*|([^=&]+)=([^&]*)");
         std::smatch matches;
 
-        std::string input = request.substr(request.length() - std::stoi(content_length), std::stoi(content_length));
+        //std::string input = request.substr(request.length() - std::stoi(content_length), std::stoi(content_length));
+        std::string input = request.substr(request.find_last_of("\r\n") + 1, std::stoi(content_length));
+        std::cout << request.c_str() << std::endl;
 
         while (std::regex_search(input, matches, pattern)) {
             content[matches[1].str()] = matches[2].str();

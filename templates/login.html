@@ -12,17 +12,5 @@
         <input type="password" id="fpass" name="fpass"><br><br>
         <input type="submit" value="Submit">
     </form>
-    <section class="p_section">
-        {% for x in data %}
-            <div class="p_block">
-                {% if x > 300 %}
-                    <h3>Esto es un bloque</h3>
-                    <p>Dato: {{ x }}</p>
-                {% else %}
-                    <h3>NO</h3>
-                {% endif %}
-            </div>
-        {% endfor %}
-    </section>
 </body>
 </html>

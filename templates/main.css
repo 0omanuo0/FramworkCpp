@@ -15,7 +15,7 @@ button{
 .main {
     border: 0.05em solid black;
     border-radius: 1rem;
-    display: flex;
+    display: grid;
     justify-content: center;
     width: 70%;
     margin: 0 auto;
@@ -35,7 +35,15 @@ button{
 	border-radius: 1rem;
 	box-shadow: 10px , 10px,10px,aliceblue gray;
 	box-shadow: 0px 0px 15px -7px rgba(0,0,0,0.75);
+    width: 120px;
 }
 .p_section{
-    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.posts{
+    width: fit-content;
+    margin: 0 auto;
 }

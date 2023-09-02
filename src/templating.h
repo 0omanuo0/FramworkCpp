@@ -22,6 +22,25 @@ class HttpServer;
 using json = nlohmann::json;
 using namespace std;
 
+struct templating_cache;
+struct expression_cache{
+    string content;
+    function<string(const map<string, string> &)> fucntion_exists;
+};
+
+struct statement_cache{
+    string content;
+    function<vector<string>(const map<string, string> &)> fucntion_exists;
+    templating_cache *block;
+};
+
+struct templating_cache{
+    string content_pre;
+    statement_cache *statements;
+    expression_cache *expressions;
+    templating_cache *content_post;
+};
+
 class Templating
 {
 private:
@@ -32,6 +51,15 @@ private:
     string __render_block(const string &path, const map<string, string> &data);
     string __render_for(string find, ifstream &file, const map<string, string> &data);
     string __render_if(string find, ifstream &file, const map<string, string> &data);
+
+
+    // string __pre_cache_expressions(string line, templating_cache &templatate_cache);
+    // string __pre_cache_statements( string line, templating_cache &templatate_cache, ifstream &file);
+    // string __pre_cache_for(        string find, templating_cache &templatate_cache, ifstream &file);
+
+    // templating_cache cached_files(string path);
+
+    double __evaluate_expression(string expression, const map<string, string> &data);
 
     const regex if_pattern = regex(R"(\bif\s+([^{}]+)\s*)");
     const regex else_pattern = regex(R"(\{\%\s+else\s+\%\})");
@@ -49,11 +77,15 @@ private:
     const regex statement_pattern = regex(R"(\{\%\s*([^{}]+)\s*\%\})");
     const regex expression_pattern = regex(R"(\{\{\s*([^{}]+)\s*\}\})");
 
+
+
 public:
     HttpServer *server;
     Templating(){};
 
     string Render(const string &route, const map<string, string> &data);
 };
+
+vector<string> FindArray(const string &content);
 
 #endif // TEMPLATING_H

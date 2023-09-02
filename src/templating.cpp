@@ -3,7 +3,7 @@
 namespace fs = filesystem;
 using namespace std;
 
-const json* navigate_json(const json* root, const std::vector<std::string>& path) {
+const json* navigate_json(const json* root, const vector<string>& path) {
     const json* current = root;
 
     for (const auto& key : path) {
@@ -44,7 +44,7 @@ void ListFilesAndFolders(const fs::path &directory, int level = 0)
     }
 }
 
-double __evaluate_expression(string expression, const map<string, string> &data)
+double Templating::__evaluate_expression(string expression, const map<string, string> &data)
 {
     // Crear un conjunto de te_variable a partir del mapa
     set<te_variable> variablesSet;

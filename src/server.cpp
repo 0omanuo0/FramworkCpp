@@ -52,11 +52,13 @@ string HttpServer::Render(const string &route, map<string, string> data)
 void HttpServer::__startListenerSSL()
 {
     vector<thread> threads;
+
     while (true)
     {
         // Aceptar una conexión entrante
         sockaddr_in clientAddress;
         socklen_t clientAddressSize = sizeof(clientAddress);
+
         int clientSocket = accept(serverSocket, reinterpret_cast<sockaddr *>(&clientAddress), &clientAddressSize);
         if (clientSocket == -1)
         {
@@ -86,6 +88,8 @@ void HttpServer::__startListenerSSL()
                       threads.end());
     }
 }
+
+
 
 void HttpServer::startListener()
 {
@@ -137,7 +141,7 @@ int HttpServer::setup()
     serverAddress.sin_port = htons(port);
 
     // Enlazar el socket a la dirección y el puerto
-    if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+    if (bind(serverSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) != 0)
     {
         cerr << "Error al enlazar el socket" << endl;
         return 1;
@@ -154,9 +158,7 @@ int HttpServer::setup()
     return 0;
 }
 
-void HttpServer::addRoute(const string &path,
-                          function<string(Args &)> handler,
-                          vector<string> methods)
+void HttpServer::addRoute(const string &path, function<string(Args &)> handler, vector<string> methods)
 {
     routes.push_back({path, methods, [handler](Args &args)
                       {
@@ -165,6 +167,9 @@ void HttpServer::addRoute(const string &path,
 }
 void HttpServer::addRouteFile(const string &endpoint, const string &extension)
 {
+    for(auto &route : routesFile)
+        if(route.path == endpoint)
+            return;
     routesFile.push_back({endpoint, content_type.find(extension)->second});
 }
 void HttpServer::urlfor(const string &endpoint)

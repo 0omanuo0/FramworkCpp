@@ -68,6 +68,7 @@ private:
     SSLcontext context;
     SSL_CTX *ssl_ctx;
     struct in_addr ip_host_struct;
+    //void __handle_client(int clientSocket);
 
     struct sockaddr_in serverAddress, clientAddress;
     int addrlen = sizeof(serverAddress);

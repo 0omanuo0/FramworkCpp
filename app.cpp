@@ -1,38 +1,16 @@
 #include <iostream>
 #include "src/server.h"
+#include "users.hpp"
 
 using namespace std;
 
 const int PORT = 8443;
-const int MAX_CONNECTIONS = 5;
+const int MAX_CONNECTIONS = 500;
 
 string HTTPScontext[] = {"secrets/cert.pem", "secrets/key.pem"};
 
-
-struct user{
-    string name;
-    string pass;
-};
-struct post{
-    user usr;
-    string post;
-};
 vector<user> USERS = {{"manu", "asdf"}, {"user2", "pass2"}};
 vector<post> POSTS = {{USERS[0], "post1"}, {USERS[1], "post2"}};
-
-user getUser(string name){
-    for(auto &user : USERS)
-        if(user.name == name) return user;
-    return user();
-}
-
-string posts_to_string(vector<post> &posts){
-    string str = "[";
-    for(auto &post : posts)
-        str += R"({"user": ")" + post.usr.name + R"(", "post": ")" + post.post + "\"}, ";
-    str.erase(str.length() - 2);
-    return str + "]";
-}
 
 HttpServer server(PORT, HTTPScontext, "server-manu.local", MAX_CONNECTIONS);
 
@@ -40,7 +18,7 @@ string home(Args &args)
 {
     if(args.request.method == POST){
         if(args.session["logged"] == "true" && !args.session.isEmpty()){
-            POSTS.push_back({getUser(args.session["user"]), args.request.content["post"]});
+            POSTS.push_back({getUser(args.session["user"], USERS), args.request.content["post"]});
             return server.Render("templates/home_logged.html", {{"user", args.session["user"]}, {"posts", posts_to_string(POSTS)}});
         }
         else
@@ -57,7 +35,7 @@ string home(Args &args)
 
 string user_account(Args &args){
     if (args.session["logged"] == "true" && args.vars[0] == args.session["user"])
-        return server.Render("templates/user.html", {{"user", args.vars[0]}, {"pass", getUser(args.vars[0]).pass}} );
+        return server.Render("templates/user.html", {{"user", args.vars[0]}, {"pass", getUser(args.vars[0], USERS).pass}} );
     else 
         return Redirect(args.ssl, "/login");
 }
